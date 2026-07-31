@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
-
 import torch
 
 D4_ORDER = (
@@ -39,19 +37,4 @@ def d4_transform(source: torch.Tensor, name: str) -> torch.Tensor:
         raise ValueError(f"unknown D4 action: {name}") from exc
 
 
-def rank_source_orbit(
-    source: torch.Tensor,
-    public_score: Callable[[torch.Tensor], tuple[float, ...]],
-) -> tuple[str, list[tuple[str, tuple[float, ...]]]]:
-    """Rank all fixed D4 sources using only a caller-supplied public score.
-
-    The stable D4 order is the final tie breaker. Ground-truth metrics must
-    never be supplied through ``public_score`` in the reported protocol.
-    """
-
-    records = [(name, tuple(public_score(d4_transform(source, name)))) for name in D4_ORDER]
-    records.sort(key=lambda item: (item[1], D4_ORDER.index(item[0])))
-    return records[0][0], records
-
-
-__all__ = ["D4_ORDER", "d4_transform", "rank_source_orbit"]
+__all__ = ["D4_ORDER", "d4_transform"]

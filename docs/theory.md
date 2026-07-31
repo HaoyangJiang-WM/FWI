@@ -21,14 +21,14 @@ The winning transform depends on the observation and realized source. Consequent
 
 ## Local profiled coupling
 
-Partition a damped local Gauss--Newton or fixed-active-set KKT model into source `s` and recourse `y`. If the recourse block is nonsingular, block elimination gives
+After the discrete D4 decision is frozen, the endpoint problem still contains continuous source control `s`. Project fixed active constraints out and partition the reduced damped local Gauss--Newton model into `s` and recourse `v`. If the recourse block is nonsingular, block elimination gives
 
 \[
-(H_{ss}-H_{sy}H_{yy}^{-1}H_{ys})\delta s
-=-g_s+H_{sy}H_{yy}^{-1}g_y.
+(H_{ss}-H_{sv}H_{vv}^{-1}H_{vs})\delta s
+=-g_s+H_{sv}H_{vv}^{-1}g_v.
 \]
 
-The Schur term removes local source directions that downstream recourse can immediately undo. In the implementation, this solve is realized in a small semantic Galerkin subspace; it is not a claim that the complete field-space Schur system is solved exactly.
+The Schur term is the reduced curvature after locally profiling recourse. The historical implementation realizes an approximation in a small blockwise subspace; this public core does not claim to reproduce the complete field-space solve.
 
 ## Linearized reachability
 
@@ -42,4 +42,4 @@ For a regular constrained solution described by a KKT map \(G(z;\xi)=0\), the im
 \frac{dz^\star}{d\xi}=-(D_zG)^{-1}D_\xi G.
 \]
 
-A positive lower bound on the smallest singular value of \(D_zG\) gives a local sensitivity bound. The empirical five-seed result is consistent with stability under the tested distribution; it is not a seed-invariance theorem.
+A positive lower bound on the smallest singular value of \(D_zG\) would give a local sensitivity bound. The five-seed panel only characterizes observed sensitivity; it neither verifies this singular-value assumption nor establishes a seed-invariance theorem.

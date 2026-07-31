@@ -19,12 +19,12 @@ Let \(\Phi_{t\leftarrow s}\) be a frozen differentiable flow, \(A\) a differenti
 \[
 g^\star=\arg\min_{g\in D_4}S_{\rm pub}(Q_g\xi;y),
 \qquad
-u^\star=\arg\min_u\ell\!\left(A\big(R(Q_{g^\star}\xi,u)\big),y\right),
-\quad \mathcal A(u)\le1.
+(s^\star,v^\star)=\arg\min_{s,v}\ell\!\left(A\big(R(Q_{g^\star}\xi+s,v)\big),y\right),
+\quad \mathcal A(s,v)\le1.
 \]
 
 - Each fixed `Q_g` is an orthogonal D4 action, preserving the realized source norm and pointwise isotropic-Gaussian log density. Because `g*` is selected adaptively, selected sources are not claimed to remain Gaussian-distributed.
-- `R` is one chronological trajectory after public source selection. One endpoint is reported per prespecified case--seed run; there is no truth-based post-hoc choice among seeds or endpoints.
+- After the discrete D4 decision, `s` is a continuous source control and `v` contains ordinary and two-Back controls. All five physical blocks are reopened by the historical endpoint solver. One endpoint is reported per prespecified case--seed run; there is no truth-based post-hoc choice among seeds or endpoints.
 - An anchored Multi-Back event is
 
 \[
@@ -77,6 +77,7 @@ This earlier five-case comparison is not the final 25-run panel. It is included 
 ![Multi-seed metric heatmaps](assets/figures/multiseed_metrics.png)
 
 The machine-readable aggregate is in [`results/final_25_summary.json`](results/final_25_summary.json).
+The full 25 x 8 D4 decision ledger, public fit/heldout keys, winners, event order, and manifest are in [`results/d4_public_h_decision_audit.json`](results/d4_public_h_decision_audit.json). The release ledger hashes to `094903548fe3908de71f191d253593c8d67c2df43ac2f3f9667fa328dd25e980`.
 
 ## Repository map
 

@@ -176,6 +176,13 @@
     "improved_mse_count": 19,
     "mean_mse_delta": -0.0049495761791189495
   },
+  "source_to_final_attribution": {
+    "improved_f1_count": 22,
+    "improved_mse_count": 19,
+    "regressed_mse_count": 6,
+    "mean_mse_delta": -0.0049495761791189495,
+    "causal_interpretation": false
+  },
   "per_case": {
     "29544": {
       "max_mse": 0.020376149852347467,

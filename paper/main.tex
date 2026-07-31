@@ -25,14 +25,16 @@ We treat the frozen trajectory as a small controllable system. The reported pipe
 Let $\Phi_{t\leftarrow s}$ be a frozen differentiable flow, $A$ a differentiable observation operator, and $y$ a measurement. Given $\xi\sim\mathcal N(0,I)$ and fixed D4 action set $G$, the reported protocol uses only public features to choose a source and then optimizes controls:
 \begin{align}
 g^\star &= \arg\min_{g\in G}S_{\rm pub}(Q_g\xi;y),\\
-u^\star &= \arg\min_u\ell\!\left(A(R(Q_{g^\star}\xi,u)),y\right)
-\quad\text{s.t.}\quad \mathcal A(u)\le1.
+(s^\star,v^\star) &= \arg\min_{s,v}\ell\!\left(A(R(Q_{g^\star}\xi+s,v)),y\right)
+\quad\text{s.t.}\quad \mathcal A(s,v)\le1.
 \label{eq:objective}
 \end{align}
-$u$ collects ordinary and recourse controls. After public source selection, one chronological trajectory returns one reported endpoint. Optimizer decisions use the public objective; ground truth is unavailable.
+After the discrete source decision, $s$ is a continuous source control and $v$ contains ordinary and two-Back recourse controls. The historical endpoint solver reopens all five physical blocks in one objective. One chronological run returns one reported endpoint. Optimizer decisions use the public objective; ground truth is unavailable.
 
 \paragraph{Norm-preserving D4 source screen.}
 Each fixed $Q_g$ is an orthogonal permutation, so $\|Q_g\xi\|=\|\xi\|$ and the pointwise isotropic-Gaussian log density is unchanged. Because $g^\star$ depends on $(\xi,y)$, the distribution of selected sources need not remain Gaussian. We claim norm and density-level-set preservation per candidate, not preservation of the adaptively selected source law.
+
+The public key is the five-tuple (broadband mean, broadband maximum, second time-difference RMS, first time-difference RMS, phase proxy), computed independently on fit and heldout acquisition splits. Feasible D4 records are ordered lexicographically by heldout key, fit key, and frozen D4 order. The public release includes all $25\times8$ records and selected transforms.
 
 \paragraph{Exactly anchored Multi-Back.}
 Suppose $x$ is at lower-noise time $\rho$ and $\rho<\tau$. We first move to the higher-noise time $\tau$, insert control $b$, and return:
