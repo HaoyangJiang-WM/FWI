@@ -118,6 +118,8 @@ The algebraic components and aggregate audit are public. The complete historical
 - Nonconvex optimization provides no global recovery guarantee.
 - The current source-versus-full comparison is component attribution, not a compute-matched 2 x 2 causal ablation. A publication-ready version should add source off/on x Multi-Back off/on, per-case uncertainty, and a matched modern generative inverse baseline.
 
+The exact frozen arm definitions, compute-matching rules, truth-blind decision policy, required audit fields, and case-cluster reporting plan are specified in [`docs/matched_experiment_protocol.md`](docs/matched_experiment_protocol.md). This protocol does not imply that those experiments have already run.
+
 ## Paper
 
 The readable short paper is in [`paper/main.md`](paper/main.md), with LaTeX source in [`paper/main.tex`](paper/main.tex). FWI-specific formulation and implementation details are deliberately separated into [`docs/fwi_appendix.md`](docs/fwi_appendix.md).
