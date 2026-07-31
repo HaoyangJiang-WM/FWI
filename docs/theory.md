@@ -28,7 +28,7 @@ After the discrete D4 decision is frozen, the endpoint problem still contains co
 =-g_s+H_{sv}H_{vv}^{-1}g_v.
 \]
 
-The Schur term is the reduced curvature after locally profiling recourse. The historical implementation realizes an approximation in a small blockwise subspace; this public core does not claim to reproduce the complete field-space solve.
+The Schur term is the reduced curvature after formally profiling recourse in this local quadratic model. It is used here only as an interpretation: the released protocol does not explicitly form or solve the full Schur system, and the public core does not claim to reproduce a complete field-space solve.
 
 ## Linearized reachability
 

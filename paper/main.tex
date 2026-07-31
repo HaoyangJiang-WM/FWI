@@ -2,8 +2,8 @@
 \usepackage[margin=0.72in]{geometry}
 \usepackage{amsmath,amssymb,booktabs,graphicx,microtype,url}
 \usepackage[hidelinks]{hyperref}
-\newcommand{\method}{Source-Orbit Multi-Back}
-\title{Go Back to Move Forward:\\Inference-Time Recourse for a Frozen Generative Flow}
+\newcommand{\method}{Symmetry-Screened Multi-Back}
+\title{Go Back to Move Forward:\\Measurement-Guided Recourse for a Frozen Generative Flow}
 \author{Anonymous Authors}
 \date{}
 
@@ -11,15 +11,15 @@
 \maketitle
 
 \begin{abstract}
-Frozen generative models encode structural priors, yet adapting them to new inverse problems remains difficult. In ambiguous inverse problems, deterministic regressors trained with pointwise losses can average across plausible interface locations. Task-specific conditional generators can avoid some averaging but often couple the conditioning modality or acquisition operator to training. We introduce \method{}, an inference-time interface for a frozen unconditional flow map. The reported implementation ranks eight norm-preserving D4 source transforms using public measurement features, then optimizes anchored trajectory controls against a differentiable observation loss. Multi-Back cycles revisit earlier flow scales and reduce exactly to identity at zero Back control. One endpoint is reported for every prespecified case--seed run without truth-based post-hoc selection. On five synthetic FWI evaluation cases crossed with five seeds, the final endpoints obtain mean MSE $0.00929$, maximum observed MSE $0.02305$, and mean boundary F1 $0.8905$. Relative to the internal source stage, the final endpoint improves MSE in 19/25 cells and F1 in 22/25, reducing mean MSE by $0.00495$. This is component attribution for one frozen flow prior, not a compute-matched causal ablation; broader model and task generalization remains future work.
+Frozen generative models encode structural priors, yet adapting them to new inverse problems remains difficult. In ambiguous inverse problems, deterministic regressors trained with pointwise losses can average across plausible interface locations. Task-specific conditional generators can favor sharper point predictions but often couple the conditioning modality or acquisition operator to training. We introduce \method{}, an inference-time interface for a frozen unconditional flow map. The implementation ranks eight norm-preserving D4 source transforms using public measurement features, then optimizes exactly anchored trajectory controls against a differentiable observation loss. One endpoint is reported for every prespecified case--seed run without truth-based post-hoc selection. On five synthetic FWI evaluation cases crossed with five seeds, the final endpoints obtain mean MSE $0.00929$, maximum observed MSE $0.02305$, and mean boundary F1 $0.8905$. Across this fixed panel, the final stage is associated with lower aggregate error than its recorded internal source checkpoint. These experiments assess repeatability and component attribution for one frozen flow prior, not superiority over external methods or a causal Multi-Back effect.
 \end{abstract}
 
 \section{Introduction}
-Learned inverse maps such as U-Nets \cite{ronneberger2015unet} amortize inference into one forward pass. Under squared error, the population minimizer is a conditional mean. When observations leave several sharp interface locations plausible, their mean need not contain a sharp interface. This is a consequence of ambiguity and the training objective, not an architectural impossibility for U-Nets. Conditional adversarial translation \cite{isola2017pix2pix} offers another route, but a task-specific conditional model commonly encodes the measurement modality and data pairing during training. Changing acquisition or physics can therefore require adaptation.
+Amortized inverse networks such as U-Nets \cite{ronneberger2015unet} map measurements to a single reconstruction. With squared-error supervision, the population-optimal deterministic predictor is the conditional mean. If a measurement is compatible with several displaced but sharp interfaces, this mean superposes them and may therefore be smooth even when every plausible solution is sharp. This is a consequence of non-identifiability, a point-estimate objective, and finite data, not an architectural theorem about U-Nets. Conditional adversarial generators \cite{isola2017pix2pix} can represent sharper conditional outputs, but they amortize a particular family of conditions seen during training. Scaling this strategy to heterogeneous modalities, acquisition geometries, and forward operators requires training-distribution coverage. This is a coverage and interface burden rather than a fundamental limitation of GANs.
 
 Pretrained score and flow models provide unconditional priors that can instead be conditioned at inference time \cite{song2021score,lipman2023flowmatching}. Diffusion posterior sampling (DPS), for example, inserts a likelihood gradient into a pretrained sampling process \cite{chung2023dps}. This motivates testing whether non-monotone trajectory recourse can add useful inference-time directions while explicitly preventing zero-control improvements from numerical round-trip defects.
 
-We treat the frozen trajectory as a small controllable system. The reported pipeline combines (i) public-objective selection over fixed D4 source transforms, (ii) exactly identity-anchored non-monotone recourse, and (iii) profiled endpoint optimization. The inverse-task condition enters only at inference time; generator weights remain frozen. We demonstrate one optimal-transport FlowMap prior on synthetic FWI. Differentiable intermediate flow access and a differentiable forward operator are required.
+We treat the frozen trajectory as a small controllable system. The pipeline combines (i) public-objective selection over fixed D4 source transforms, (ii) exactly identity-anchored non-monotone recourse, and (iii) joint endpoint optimization. The inverse-task condition enters only at inference time; generator weights remain frozen. The broader foundation-model connection is a hypothesis rather than a demonstrated result. Anchored recourse may be applicable to frozen differentiable trajectory generators with accessible intermediate states and derivatives; the D4 screen is image- and symmetry-specific. This paper evaluates neither a foundation model nor cross-prior transfer.
 
 \section{Method}
 Let $\Phi_{t\leftarrow s}$ be a frozen differentiable flow, $A$ a differentiable observation operator, and $y$ a measurement. Given $\xi\sim\mathcal N(0,I)$ and fixed D4 action set $G$, every transform first receives the same fit-only source-probe budget:
@@ -27,17 +27,17 @@ Let $\Phi_{t\leftarrow s}$ be a frozen differentiable flow, $A$ a differentiable
 s_g^{\rm probe} &= \arg\min_{s\in\mathcal B_{\rm probe}}
 \ell_{\rm fit}\!\left(A(R_0(Q_g\xi+s)),y_{\rm fit}\right),\\
 g^\star &= \operatorname*{lexargmin}_{g\in G}
-K_{\rm heldout}(Q_g\xi+s_g^{\rm probe}),\\
-(s^\star,v^\star) &= \arg\min_{s,v}\ell\!\left(A(R(Q_{g^\star}\xi+s,v)),y\right)
+K_{\rm sel}\!\left(A_{\rm sel}(R_0(Q_g\xi+s_g^{\rm probe})),y_{\rm sel}\right),\\
+(s^\star,v^\star) &= \arg\min_{s,v}\ell_{\rm pub}\!\left(A(R(Q_{g^\star}\xi+s,v)),y\right)
 \quad\text{s.t.}\quad \mathcal A(s,v)\le1.
 \label{eq:objective}
 \end{align}
-The probe displacement is used only to rank equally budgeted candidates; the winning transformed raw source is cached, and its continuous source control is reoptimized downstream. After the discrete decision, $s$ is a continuous source control and $v$ contains ordinary and two-Back recourse controls. The historical endpoint solver reopens all five physical blocks in one objective. One chronological run returns one reported endpoint. Optimizer decisions use the public objective; ground truth is unavailable.
+Each candidate is optimized on a probe-fit acquisition subset and ranked on a disjoint source-selection subset. The latter is held out from probe fitting but used for model selection; it is not an independent test set. The probe displacement is not inherited: the winning transformed raw source is cached, and its continuous source control is reoptimized downstream with $v$. The endpoint solver jointly reopens all five implemented physical blocks. One chronological endpoint solve follows the finite screen, and one endpoint is reported. Ground truth is unavailable to every optimizer decision.
 
 \paragraph{Norm-preserving D4 source screen.}
 Each fixed $Q_g$ is an orthogonal permutation, so $\|Q_g\xi\|=\|\xi\|$ and the pointwise isotropic-Gaussian log density is unchanged. Because $g^\star$ depends on $(\xi,y)$, the distribution of selected sources need not remain Gaussian. We claim norm and density-level-set preservation per candidate, not preservation of the adaptively selected source law.
 
-The public key is the five-tuple (broadband mean, broadband maximum, second time-difference RMS, first time-difference RMS, phase proxy), computed independently on fit and heldout acquisition splits. Feasible D4 records are ordered lexicographically by heldout key, fit key, and frozen D4 order. The public release includes all $25\times8$ records and selected transforms.
+The prespecified public key is computed independently on probe-fit and source-selection acquisition splits. The latter is held out only from probe fitting and is used for candidate selection; it is not an independent test set. Feasible D4 records are ordered lexicographically by selection key, fit key, and frozen D4 order. The public release includes all $25\times8$ records and selected transforms.
 
 \paragraph{Exactly anchored Multi-Back.}
 Suppose $x$ is at lower-noise time $\tau$ and $\tau<\rho$. We first move to the higher-noise time $\rho$, insert control $b$, and return:
@@ -52,12 +52,12 @@ The controlled return is measured relative to its passive numerical round trip.
 \textbf{Anchoring property.}
 For any frozen numerical maps in Eq.~\eqref{eq:back}, $C_{\tau,\rho}(x;0)=x$, because the two return terms cancel. No invertibility or semigroup assumption is required. Zero Back control therefore cannot change the incoming state by exploiting a cycle defect.
 
-\paragraph{Profiled local coupling.}
+\paragraph{Local coupling interpretation.}
 After projecting out fixed active constraints, partition a reduced damped local Gauss--Newton matrix into source $s$ and recourse $v$. If $H_{vv}$ is nonsingular, elimination gives
 \begin{equation}
 S=H_{ss}-H_{sv}H_{vv}^{-1}H_{vs}.
 \end{equation}
-This accounts for curvature coupled through locally profiled recourse. The implementation uses a blockwise Galerkin basis rebuilt after accepted nonlinear steps. The statement is local and supplies neither global convergence nor recovery guarantees.
+Formally profiling $v$ in this local quadratic model gives the expression above. We use it only to interpret source--recourse coupling; the endpoint solver performs blockwise nonlinear optimization and does not explicitly form or solve the full Schur system. This local interpretation supplies neither convergence nor recovery guarantees.
 
 \section{FWI Case Study}
 We use a frozen optimal-transport FlowMap trained as an unconditional $70\times70$ geological prior. A differentiable acoustic forward model maps the endpoint to receiver observations. Five evaluation rows (29864, 29748, 29544, 29952, 29694) are crossed with raw seeds 20268032--20268432. The algorithm, grid, action budget, and hashes are recorded in a frozen manifest before the remaining panel is run. Truth is opened only after each endpoint record is frozen and is used for postdecision MSE and boundary F1. Complete acquisition, checkpoint, split, exposure-history, and metric definitions are required in the archival appendix.

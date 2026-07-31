@@ -9,7 +9,7 @@ The frozen prior generates a normalized scalar geological field of shape `1 x 1 
 The differentiable acoustic backend returns public observations with axes `[batch, acquisition, time, receiver]`. Five acquisition groups are split before selection:
 
 - fit acquisitions: `(0, 2, 4)`;
-- heldout acquisitions: `(1, 3)`.
+- source-selection acquisitions (held out from probe fitting, but used for D4 selection): `(1, 3)`.
 
 For a prediction `p` and public observation `h`, source candidates are ranked by the lexicographic key
 
@@ -17,7 +17,7 @@ For a prediction `p` and public observation `h`, source candidates are ranked by
 k(p,h)=(\bar r_{\mathrm{bb}},\max r_{\mathrm{bb}},r_{\Delta_t^2},r_{\Delta_t},r_{\mathrm{phase}}),
 \]
 
-where broadband terms are acquisition-wise residual RMS values, the next two entries are global RMS values of second and first time differences, and the phase proxy is one minus the mean cosine similarity between first-time-difference traces. The key is computed separately on fit and heldout acquisitions. Feasible records are ordered by heldout key, fit key, and frozen D4 declaration order. The exact implementation is public in `src/flowmap_multiback/public_h_metrics.py` and `public_h_selection.py`.
+where broadband terms are acquisition-wise residual RMS values, the next two entries are global RMS values of second and first time differences, and the phase proxy is one minus the mean cosine similarity between first-time-difference traces. The key is computed separately on probe-fit and source-selection acquisitions. Feasible records are ordered by selection key, fit key, and frozen D4 declaration order. The selection split is not an independent test set. The exact implementation is public in `src/flowmap_multiback/public_h_metrics.py` and `public_h_selection.py`.
 
 The physical wave equation, grid spacing, boundary treatment, time step, receiver count, source wavelet, and dimensional velocity conversion are encapsulated in the unavailable materialized backend. They must be released before claiming end-to-end reproducibility.
 
