@@ -10,11 +10,11 @@ On five synthetic full-waveform inversion (FWI) evaluation cases crossed with fi
 
 ## 1. Introduction
 
-Amortized inverse networks such as U-Nets [1] map measurements to a single reconstruction. With squared-error supervision, the population-optimal deterministic predictor is the conditional mean. If a measurement is compatible with several displaced but sharp interfaces, this mean superposes them and may therefore be smooth even when every plausible solution is sharp. This is a consequence of non-identifiability, a point-estimate objective, and finite data—not an architectural theorem about U-Nets.
+Amortized inverse networks such as U-Nets [1] map measurements to a single reconstruction. With squared-error supervision, the population-optimal deterministic predictor is the conditional mean. If a measurement is compatible with several displaced but sharp interfaces, this mean superposes them and may therefore be smooth even when every plausible solution is sharp. Related perception–distortion results show that distortion-optimal restoration need not optimize distributional perceptual quality [6]; they do not constitute a theorem about interface sharpness or U-Net architectures.
 
 Conditional adversarial generators [2] can represent sharper conditional outputs, but they amortize a particular family of conditions seen during training. Scaling this strategy to heterogeneous modalities, acquisition geometries, and forward operators requires those conditions to be represented, paired with targets, and covered by the training distribution. This is a coverage and interface burden rather than a fundamental limitation of GANs. We study an orthogonal axis: keeping the prior frozen and introducing a new differentiable operator only through an inference-time objective.
 
-Pretrained score and flow models provide unconditional priors that can instead be conditioned at inference time [3,4]. Diffusion posterior sampling, for example, inserts a likelihood gradient into a pretrained sampling process [5]. This motivates testing whether non-monotone trajectory recourse can add useful inference-time directions while explicitly preventing zero-control improvements from numerical round-trip defects.
+Pretrained score and flow models provide unconditional generative priors [3,4]; minibatch optimal-transport couplings have also been developed for flow matching [10]. These priors can be conditioned at inference time. Earlier work has optimized a frozen invertible generative prior for inverse problems [7]. Diffusion posterior sampling, for example, inserts a likelihood gradient into a pretrained sampling process [5]. This motivates testing whether non-monotone trajectory recourse can add useful inference-time directions while explicitly preventing zero-control improvements from numerical round-trip defects.
 
 We treat the frozen trajectory as a small controllable system. The reported pipeline combines:
 
@@ -31,14 +31,22 @@ Let $\Phi_{t\leftarrow s}$ be a frozen differentiable flow, $A$ a differentiable
 $$
 s_g^{\mathrm{probe}}
 =\arg\min_{s\in\mathcal B_{\mathrm{probe}}}
-\ell_{\mathrm{fit}}\!\left(A(R_0(Q_g\xi+s)),y_{\mathrm{fit}}\right).
+\ell_{\mathrm{fit}}\!\left(A_{\mathrm{fit}}(R_0(Q_g\xi+s)),y_{\mathrm{fit}}\right).
 $$
 
-Candidates are ranked using held-out public measurement features:
+The probe-fit and source-selection keys are
 
 $$
-g^\star=\operatorname*{lexargmin}_{g\in G}
-K_{\mathrm{sel}}\!\left(A_{\mathrm{sel}}(R_0(Q_g\xi+s_g^{\mathrm{probe}})),y_{\mathrm{sel}}\right).
+k_g^{\mathrm{sel}}=K\!\left(A_{\mathrm{sel}}(R_0(Q_g\xi+s_g^{\mathrm{probe}})),y_{\mathrm{sel}}\right),
+\qquad
+k_g^{\mathrm{fit}}=K\!\left(A_{\mathrm{fit}}(R_0(Q_g\xi+s_g^{\mathrm{probe}})),y_{\mathrm{fit}}\right).
+$$
+
+Candidates are ranked by the complete selection tuple, then the complete fit tuple, then frozen D4 order:
+
+$$
+g^\star=\operatorname*{argmin}^{\mathrm{lex}}_{g\in G}
+\left(k_g^{\mathrm{sel}},k_g^{\mathrm{fit}},\operatorname{ord}_G(g)\right).
 $$
 
 The winning transformed raw source is cached; its continuous source control and trajectory recourse are then reoptimized jointly:
@@ -87,7 +95,7 @@ Formally profiling $v$ in this local quadratic model gives the expression above.
 
 ## 3. FWI Case Study
 
-We use a frozen optimal-transport FlowMap trained as an unconditional $70\times70$ geological prior. A differentiable acoustic forward model maps the endpoint to receiver observations. Five evaluation rows (29864, 29748, 29544, 29952, 29694) are crossed with raw seeds 20268032–20268432. The algorithm, grid, action budget, and hashes are recorded in a frozen manifest before the remaining panel is run. Truth is opened only after each endpoint record is frozen and is used for post-decision MSE and boundary F1.
+We use a frozen optimal-transport FlowMap trained as an unconditional $70\times70$ geological prior. A differentiable acoustic forward model maps the endpoint to receiver observations. Classical FWI is a nonconvex wave-equation data-fitting problem [8]; InversionNet is a representative task-trained CNN alternative [9]. Five evaluation rows (29864, 29748, 29544, 29952, 29694) are crossed with raw seeds 20268032–20268432. The algorithm, grid, action budget, and hashes were recorded in a frozen manifest before the remaining panel was run. Truth is opened only after each endpoint record is frozen and is used for post-decision MSE and boundary F1.
 
 FWI-specific acquisition, checkpoint, split, exposure-history, and metric details are separated into the [archival appendix](../docs/fwi_appendix.md), keeping the main formulation task-agnostic.
 
@@ -135,6 +143,11 @@ Within this scope, inference-time source selection and exactly anchored recourse
 3. Y. Song et al. “Score-Based Generative Modeling through Stochastic Differential Equations.” *ICLR*, 2021.
 4. Y. Lipman et al. “Flow Matching for Generative Modeling.” *ICLR*, 2023.
 5. H. Chung et al. “Diffusion Posterior Sampling for General Noisy Inverse Problems.” *ICLR*, 2023.
+6. Y. Blau and T. Michaeli. “The Perception-Distortion Tradeoff.” *CVPR*, 2018.
+7. M. Asim, M. Daniels, O. Leong, A. Ahmed, and P. Hand. “Invertible Generative Models for Inverse Problems: Mitigating Representation Error and Dataset Bias.” *ICML*, 2020.
+8. J. Virieux and S. Operto. “An Overview of Full-Waveform Inversion in Exploration Geophysics.” *Geophysics*, 74(6), 2009.
+9. Y. Wu and Y. Lin. “InversionNet: An Efficient and Accurate Data-Driven Full Waveform Inversion.” *IEEE Transactions on Computational Imaging*, 6, 2020.
+10. A. Tong et al. “Improving and Generalizing Flow-Based Generative Models with Minibatch Optimal Transport.” *Transactions on Machine Learning Research*, 2024.
 
 ---
 

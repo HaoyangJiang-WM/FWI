@@ -15,9 +15,9 @@ Frozen generative models encode structural priors, yet adapting them to new inve
 \end{abstract}
 
 \section{Introduction}
-Amortized inverse networks such as U-Nets \cite{ronneberger2015unet} map measurements to a single reconstruction. With squared-error supervision, the population-optimal deterministic predictor is the conditional mean. If a measurement is compatible with several displaced but sharp interfaces, this mean superposes them and may therefore be smooth even when every plausible solution is sharp. This is a consequence of non-identifiability, a point-estimate objective, and finite data, not an architectural theorem about U-Nets. Conditional adversarial generators \cite{isola2017pix2pix} can represent sharper conditional outputs, but they amortize a particular family of conditions seen during training. Scaling this strategy to heterogeneous modalities, acquisition geometries, and forward operators requires training-distribution coverage. This is a coverage and interface burden rather than a fundamental limitation of GANs.
+Amortized inverse networks such as U-Nets \cite{ronneberger2015unet} map measurements to a single reconstruction. With squared-error supervision, the population-optimal deterministic predictor is the conditional mean. If a measurement is compatible with several displaced but sharp interfaces, this mean superposes them and may therefore be smooth even when every plausible solution is sharp. Related perception--distortion results show that distortion-optimal restoration need not optimize distributional perceptual quality \cite{blau2018perception}; they do not constitute a theorem about interface sharpness or U-Net architectures. Conditional adversarial generators \cite{isola2017pix2pix} can represent sharper conditional outputs, but they amortize a particular family of conditions seen during training. Scaling this strategy to heterogeneous modalities, acquisition geometries, and forward operators requires training-distribution coverage. This is a coverage and interface burden rather than a fundamental limitation of GANs.
 
-Pretrained score and flow models provide unconditional priors that can instead be conditioned at inference time \cite{song2021score,lipman2023flowmatching}. Diffusion posterior sampling (DPS), for example, inserts a likelihood gradient into a pretrained sampling process \cite{chung2023dps}. This motivates testing whether non-monotone trajectory recourse can add useful inference-time directions while explicitly preventing zero-control improvements from numerical round-trip defects.
+Pretrained score and flow models provide unconditional generative priors \cite{song2021score,lipman2023flowmatching}; minibatch optimal-transport couplings have also been developed for flow matching \cite{tong2023otcfm}. These priors can be conditioned at inference time. Earlier work has optimized a frozen invertible generative prior for inverse problems \cite{asim2020invertible}. Diffusion posterior sampling (DPS), for example, inserts a likelihood gradient into a pretrained sampling process \cite{chung2023dps}. This motivates testing whether non-monotone trajectory recourse can add useful inference-time directions while explicitly preventing zero-control improvements from numerical round-trip defects.
 
 We treat the frozen trajectory as a small controllable system. The pipeline combines (i) public-objective selection over fixed D4 source transforms, (ii) exactly identity-anchored non-monotone recourse, and (iii) joint endpoint optimization. The inverse-task condition enters only at inference time; generator weights remain frozen. The broader foundation-model connection is a hypothesis rather than a demonstrated result. Anchored recourse may be applicable to frozen differentiable trajectory generators with accessible intermediate states and derivatives; the D4 screen is image- and symmetry-specific. This paper evaluates neither a foundation model nor cross-prior transfer.
 
@@ -25,9 +25,11 @@ We treat the frozen trajectory as a small controllable system. The pipeline comb
 Let $\Phi_{t\leftarrow s}$ be a frozen differentiable flow, $A$ a differentiable observation operator, and $y$ a measurement. Given $\xi\sim\mathcal N(0,I)$ and fixed D4 action set $G$, every transform first receives the same fit-only source-probe budget:
 \begin{align}
 s_g^{\rm probe} &= \arg\min_{s\in\mathcal B_{\rm probe}}
-\ell_{\rm fit}\!\left(A(R_0(Q_g\xi+s)),y_{\rm fit}\right),\\
-g^\star &= \operatorname*{lexargmin}_{g\in G}
-K_{\rm sel}\!\left(A_{\rm sel}(R_0(Q_g\xi+s_g^{\rm probe})),y_{\rm sel}\right),\\
+\ell_{\rm fit}\!\left(A_{\rm fit}(R_0(Q_g\xi+s)),y_{\rm fit}\right),\\
+k_g^{\rm sel} &= K\!\left(A_{\rm sel}(R_0(Q_g\xi+s_g^{\rm probe})),y_{\rm sel}\right),\\
+k_g^{\rm fit} &= K\!\left(A_{\rm fit}(R_0(Q_g\xi+s_g^{\rm probe})),y_{\rm fit}\right),\\
+g^\star &= \operatorname*{argmin}^{\rm lex}_{g\in G}
+\left(k_g^{\rm sel},k_g^{\rm fit},\operatorname{ord}_G(g)\right),\\
 (s^\star,v^\star) &= \arg\min_{s,v}\ell_{\rm pub}\!\left(A(R(Q_{g^\star}\xi+s,v)),y\right)
 \quad\text{s.t.}\quad \mathcal A(s,v)\le1.
 \label{eq:objective}
@@ -60,7 +62,7 @@ S=H_{ss}-H_{sv}H_{vv}^{-1}H_{vs}.
 Formally profiling $v$ in this local quadratic model gives the expression above. We use it only to interpret source--recourse coupling; the endpoint solver performs blockwise nonlinear optimization and does not explicitly form or solve the full Schur system. This local interpretation supplies neither convergence nor recovery guarantees.
 
 \section{FWI Case Study}
-We use a frozen optimal-transport FlowMap trained as an unconditional $70\times70$ geological prior. A differentiable acoustic forward model maps the endpoint to receiver observations. Five evaluation rows (29864, 29748, 29544, 29952, 29694) are crossed with raw seeds 20268032--20268432. The algorithm, grid, action budget, and hashes are recorded in a frozen manifest before the remaining panel is run. Truth is opened only after each endpoint record is frozen and is used for postdecision MSE and boundary F1. Complete acquisition, checkpoint, split, exposure-history, and metric definitions are required in the archival appendix.
+We use a frozen optimal-transport FlowMap trained as an unconditional $70\times70$ geological prior. A differentiable acoustic forward model maps the endpoint to receiver observations. Classical FWI is a nonconvex wave-equation data-fitting problem \cite{virieux2009fwi}; amortized CNN inversion provides a representative task-trained alternative \cite{wu2019inversionnet}. Five evaluation rows (29864, 29748, 29544, 29952, 29694) are crossed with raw seeds 20268032--20268432. The algorithm, grid, action budget, and hashes were recorded in a frozen manifest before the remaining panel was run. Truth is opened only after each endpoint record is frozen and is used for postdecision MSE and boundary F1. Acquisition, checkpoint, split, exposure-history, and metric definitions are documented in the archival appendix.
 
 \begin{figure}[t]
 \centering

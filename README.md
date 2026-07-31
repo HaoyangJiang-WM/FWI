@@ -18,10 +18,14 @@ Let \(\Phi_{t\leftarrow s}\) be a frozen differentiable flow, \(A\) a differenti
 
 \[
 s_g^{\rm probe}=\arg\min_{s\in\mathcal B_{\rm probe}}
-\ell_{\rm fit}\!\left(A(R_0(Q_g\xi+s)),y_{\rm fit}\right),
+\ell_{\rm fit}\!\left(A_{\rm fit}(R_0(Q_g\xi+s)),y_{\rm fit}\right),
 \qquad
-g^\star=\operatorname*{lexargmin}_{g\in D_4}
-K_{\rm sel}\!\left(A_{\rm sel}(R_0(Q_g\xi+s_g^{\rm probe})),y_{\rm sel}\right),
+k_g^{\rm sel}=K\!\left(A_{\rm sel}(R_0(Q_g\xi+s_g^{\rm probe})),y_{\rm sel}\right),
+\qquad
+k_g^{\rm fit}=K\!\left(A_{\rm fit}(R_0(Q_g\xi+s_g^{\rm probe})),y_{\rm fit}\right),
+\qquad
+g^\star=\operatorname*{argmin}^{\rm lex}_{g\in D_4}
+\left(k_g^{\rm sel},k_g^{\rm fit},\operatorname{ord}_{D_4}(g)\right),
 \qquad
 (s^\star,v^\star)=\arg\min_{s,v}\ell\!\left(A\big(R(Q_{g^\star}\xi+s,v)\big),y\right),
 \quad \mathcal A(s,v)\le1.
