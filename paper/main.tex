@@ -1,0 +1,110 @@
+\documentclass[10pt,twocolumn]{article}
+\usepackage[margin=0.72in]{geometry}
+\usepackage{amsmath,amssymb,booktabs,graphicx,microtype,url}
+\usepackage[hidelinks]{hyperref}
+\newcommand{\method}{Source-Orbit Multi-Back}
+\title{Go Back to Move Forward:\\Inference-Time Recourse for a Frozen Generative Flow}
+\author{Anonymous Authors}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Frozen generative models encode structural priors, yet adapting them to new inverse problems remains difficult. In ambiguous inverse problems, deterministic regressors trained with pointwise losses can average across plausible interface locations. Task-specific conditional generators can avoid some averaging but often couple the conditioning modality or acquisition operator to training. We introduce \method{}, an inference-time interface for a frozen unconditional flow map. The reported implementation ranks eight norm-preserving D4 source transforms using public measurement features, then optimizes anchored trajectory controls against a differentiable observation loss. Multi-Back cycles revisit earlier flow scales and reduce exactly to identity at zero Back control. One endpoint is reported for every prespecified case--seed run without truth-based post-hoc selection. On five synthetic FWI evaluation cases crossed with five seeds, the final endpoints obtain mean MSE $0.00929$, maximum observed MSE $0.02305$, and mean boundary F1 $0.8905$. Relative to the internal source stage, the final endpoint improves MSE in 19/25 cells and F1 in 22/25, reducing mean MSE by $0.00495$. This is component attribution for one frozen flow prior, not a compute-matched causal ablation; broader model and task generalization remains future work.
+\end{abstract}
+
+\section{Introduction}
+Learned inverse maps such as U-Nets \cite{ronneberger2015unet} amortize inference into one forward pass. Under squared error, the population minimizer is a conditional mean. When observations leave several sharp interface locations plausible, their mean need not contain a sharp interface. This is a consequence of ambiguity and the training objective, not an architectural impossibility for U-Nets. Conditional adversarial translation \cite{isola2017pix2pix} offers another route, but a task-specific conditional model commonly encodes the measurement modality and data pairing during training. Changing acquisition or physics can therefore require adaptation.
+
+Pretrained score and flow models provide unconditional priors that can instead be conditioned at inference time \cite{song2021score,lipman2023flowmatching}. Diffusion posterior sampling (DPS), for example, inserts a likelihood gradient into a pretrained sampling process \cite{chung2023dps}. This motivates testing whether non-monotone trajectory recourse can add useful inference-time directions while explicitly preventing zero-control improvements from numerical round-trip defects.
+
+We treat the frozen trajectory as a small controllable system. The reported pipeline combines (i) public-objective selection over fixed D4 source transforms, (ii) exactly identity-anchored non-monotone recourse, and (iii) profiled endpoint optimization. The inverse-task condition enters only at inference time; generator weights remain frozen. We demonstrate one optimal-transport FlowMap prior on synthetic FWI. Differentiable intermediate flow access and a differentiable forward operator are required.
+
+\section{Method}
+Let $\Phi_{t\leftarrow s}$ be a frozen differentiable flow, $A$ a differentiable observation operator, and $y$ a measurement. Given $\xi\sim\mathcal N(0,I)$ and fixed D4 action set $G$, the reported protocol uses only public features to choose a source and then optimizes controls:
+\begin{align}
+g^\star &= \arg\min_{g\in G}S_{\rm pub}(Q_g\xi;y),\\
+u^\star &= \arg\min_u\ell\!\left(A(R(Q_{g^\star}\xi,u)),y\right)
+\quad\text{s.t.}\quad \mathcal A(u)\le1.
+\label{eq:objective}
+\end{align}
+$u$ collects ordinary and recourse controls. After public source selection, one chronological trajectory returns one reported endpoint. Optimizer decisions use the public objective; ground truth is unavailable.
+
+\paragraph{Norm-preserving D4 source screen.}
+Each fixed $Q_g$ is an orthogonal permutation, so $\|Q_g\xi\|=\|\xi\|$ and the pointwise isotropic-Gaussian log density is unchanged. Because $g^\star$ depends on $(\xi,y)$, the distribution of selected sources need not remain Gaussian. We claim norm and density-level-set preservation per candidate, not preservation of the adaptively selected source law.
+
+\paragraph{Exactly anchored Multi-Back.}
+Suppose $x$ is at lower-noise time $\rho$ and $\rho<\tau$. We first move to the higher-noise time $\tau$, insert control $b$, and return:
+\begin{equation}
+C_{\rho,\tau}(x;b)=x+\Phi_{\rho\leftarrow\tau}
+ (\Phi_{\tau\leftarrow\rho}(x)+b)
+-\Phi_{\rho\leftarrow\tau}(\Phi_{\tau\leftarrow\rho}(x)).
+\label{eq:back}
+\end{equation}
+The controlled return is measured relative to its passive numerical round trip.
+
+\textbf{Anchoring property.}
+For any frozen numerical maps in Eq.~\eqref{eq:back}, $C_{\rho,\tau}(x;0)=x$, because the two return terms cancel. No invertibility or semigroup assumption is required. Zero Back control therefore cannot change the incoming state by exploiting a cycle defect.
+
+\paragraph{Profiled local coupling.}
+After projecting out fixed active constraints, partition a reduced damped local Gauss--Newton matrix into source $s$ and recourse $v$. If $H_{vv}$ is nonsingular, elimination gives
+\begin{equation}
+S=H_{ss}-H_{sv}H_{vv}^{-1}H_{vs}.
+\end{equation}
+This accounts for curvature coupled through locally profiled recourse. The implementation uses a blockwise Galerkin basis rebuilt after accepted nonlinear steps. The statement is local and supplies neither global convergence nor recovery guarantees.
+
+\section{FWI Case Study}
+We use a frozen optimal-transport FlowMap trained as an unconditional $70\times70$ geological prior. A differentiable acoustic forward model maps the endpoint to receiver observations. Five evaluation rows (29864, 29748, 29544, 29952, 29694) are crossed with raw seeds 20268032--20268432. The algorithm, grid, action budget, and hashes are recorded in a frozen manifest before the remaining panel is run. Truth is opened only after each endpoint record is frozen and is used for postdecision MSE and boundary F1. Complete acquisition, checkpoint, split, exposure-history, and metric definitions are required in the archival appendix.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../assets/figures/multiseed_models.png}
+\caption{Truth and final reconstructions for five evaluation cases crossed with five prespecified raw seeds.}
+\label{fig:models}
+\end{figure}
+
+\paragraph{Cross-seed results.}
+Figure~\ref{fig:metrics} reports the balanced case-by-seed matrix. The final endpoints obtain mean/maximum-observed MSE $0.00929/0.02305$, mean/minimum boundary F1 $0.8905/0.7526$, and mean right-third MSE $0.00907$. Mean runtime is 2,978 seconds per cell. The 25 cells form a crossed design over only five geological cases; they are not 25 independent tasks.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../assets/figures/multiseed_metrics.png}
+\caption{Five evaluation cases (rows) crossed with five prespecified raw seeds (columns). One endpoint is reported per cell without truth-based post-hoc seed or endpoint selection.}
+\label{fig:metrics}
+\end{figure}
+
+\begin{table}[t]
+\centering
+\caption{Internal source-stage and final-endpoint metrics. The source stage is not a compute-matched independent baseline.}
+\begin{tabular}{lrr}
+\toprule
+Metric & Source stage & Final endpoint\\
+\midrule
+Mean MSE & 0.01424 & \textbf{0.00929}\\
+Maximum observed MSE & 0.03219 & \textbf{0.02305}\\
+MSE improved & -- & 19/25\\
+F1 improved & -- & 22/25\\
+\bottomrule
+\end{tabular}
+\label{tab:main}
+\end{table}
+
+\paragraph{Component attribution.}
+Relative to the internal source stage, the final endpoint reduces mean MSE by $0.00495$. It improves MSE in 19/25 cells and worsens it in 6/25; boundary F1 improves in 22/25. Figure~\ref{fig:attribution} reports every paired change. This supports component attribution inside the implemented pipeline but does not identify a causal source--Multi-Back interaction.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../assets/figures/source_to_multiback_attribution.png}
+\caption{Internal source-stage to final-endpoint MSE changes. Blue denotes improvement and red regression. This is not a compute-matched independent baseline.}
+\label{fig:attribution}
+\end{figure}
+
+\section{Limitations and Conclusion}
+This technical draft contains only five geological cases, one synthetic acquisition family, and one frozen flow prior. It requires differentiable physics and intermediate trajectory access and is computationally expensive. Its D4 stage performs public-objective candidate selection, and the nonconvex solver has no global recovery guarantee. Matched external baselines, a source off/on $\times$ Multi-Back off/on experiment, uncertainty over more independent cases, and a licensed end-to-end release remain necessary for a formal submission.
+
+Within this scope, inference-time source selection and exactly anchored recourse inject measurements without inverse-task retraining. The final endpoint has lower aggregate mean and maximum observed MSE than its recorded internal source stage; this is attribution, not a causal or compute-matched comparison. Broader applicability remains a hypothesis to test on new operators and priors.
+
+\bibliographystyle{plain}
+\bibliography{references}
+\end{document}
