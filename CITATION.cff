@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use this software or its released results, please cite it using the metadata below."
+title: "Go Back to Move Forward: Measurement-Guided Recourse for a Frozen Generative Flow"
+type: software
+version: 0.1.0
+date-released: 2026-07-31
+license: MIT
+authors:
+  - family-names: Jiang
+    given-names: Haoyang
+    affiliation: William & Mary
+repository-code: "https://github.com/HaoyangJiang-WM/FWI"
+url: "https://github.com/HaoyangJiang-WM/FWI"
+keywords:
+  - full-waveform inversion
+  - flow matching
+  - inverse problems
+  - generative priors
+  - scientific machine learning
+abstract: >-
+  A minimal-core and audit release for symmetry-screened, inference-time
+  Multi-Back control of a frozen unconditional generative flow, evaluated on
+  a synthetic full-waveform inversion case study.
