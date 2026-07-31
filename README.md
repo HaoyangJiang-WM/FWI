@@ -14,23 +14,28 @@ Task-specific conditional generators address ambiguity differently, but they com
 
 ## Method
 
-Let \(\Phi_{t\leftarrow s}\) be a frozen differentiable flow, \(A\) a differentiable observation operator, and \(y\) a measurement. Starting from \(\xi\sim\mathcal N(0,I)\), the reported implementation uses a truth-free public score \(S_{\rm pub}\):
+Let \(\Phi_{t\leftarrow s}\) be a frozen differentiable flow, \(A\) a differentiable observation operator, and \(y\) a measurement. Starting from \(\xi\sim\mathcal N(0,I)\), each D4 transform receives the same fit-only source-probe budget:
 
 \[
-g^\star=\arg\min_{g\in D_4}S_{\rm pub}(Q_g\xi;y),
+s_g^{\rm probe}=\arg\min_{s\in\mathcal B_{\rm probe}}
+\ell_{\rm fit}\!\left(A(R_0(Q_g\xi+s)),y_{\rm fit}\right),
+\qquad
+g^\star=\operatorname*{lexargmin}_{g\in D_4}
+K_{\rm heldout}(Q_g\xi+s_g^{\rm probe}),
 \qquad
 (s^\star,v^\star)=\arg\min_{s,v}\ell\!\left(A\big(R(Q_{g^\star}\xi+s,v)\big),y\right),
 \quad \mathcal A(s,v)\le1.
 \]
 
-- Each fixed `Q_g` is an orthogonal D4 action, preserving the realized source norm and pointwise isotropic-Gaussian log density. Because `g*` is selected adaptively, selected sources are not claimed to remain Gaussian-distributed.
+- Each fixed `Q_g` is an orthogonal D4 action, preserving the realized source norm and pointwise isotropic-Gaussian log density. The probe is used only for equal-budget public-H ranking; the winning transformed raw source is cached and its continuous source control is reoptimized downstream. Because `g*` is selected adaptively, selected sources are not claimed to remain Gaussian-distributed.
 - After the discrete D4 decision, `s` is a continuous source control and `v` contains ordinary and two-Back controls. All five physical blocks are reopened by the historical endpoint solver. One endpoint is reported per prespecified case--seed run; there is no truth-based post-hoc choice among seeds or endpoints.
 - An anchored Multi-Back event is
 
 \[
-C_{\rho,\tau}(x;b)=x+\Phi_{\rho\leftarrow\tau}
-  (\Phi_{\tau\leftarrow\rho}(x)+b)
--\Phi_{\rho\leftarrow\tau}(\Phi_{\tau\leftarrow\rho}(x)).
+C_{\tau,\rho}(x;b)=x+\Phi_{\tau\leftarrow\rho}
+  (\Phi_{\rho\leftarrow\tau}(x)+b)
+-\Phi_{\tau\leftarrow\rho}(\Phi_{\rho\leftarrow\tau}(x)),
+\qquad \tau<\rho.
 \]
 
 Consequently, \(C(x;0)=x\) exactly for any frozen numerical flow. Zero Back control cannot change the incoming state through a learned or numerical round-trip defect.
