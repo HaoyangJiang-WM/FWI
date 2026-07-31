@@ -2,7 +2,10 @@
 
 **Symmetry-screened, inference-time Multi-Back control for a frozen generative flow**
 
+**Author:** Haoyang Jiang, William & Mary
+
 [![Tests](https://github.com/HaoyangJiang-WM/FWI/actions/workflows/tests.yml/badge.svg)](https://github.com/HaoyangJiang-WM/FWI/actions/workflows/tests.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 This is a **minimal-core and audit release**, not an end-to-end FWI reproduction package. It documents how a frozen unconditional flow was adapted without updating generator weights or adding the inverse-task condition during prior training. The implemented protocol screens eight fixed D4 transforms using measurement features, then optimizes anchored trajectory interventions against the measurement residual.
 
@@ -136,6 +139,20 @@ The frozen definitions for the missing matched experiments are in [`docs/matched
 
 The readable short paper is in [`paper/main.md`](paper/main.md), with LaTeX source in [`paper/main.tex`](paper/main.tex). FWI-specific formulation and implementation details are in [`docs/fwi_appendix.md`](docs/fwi_appendix.md).
 
-## Citation and license
+## Citation
 
-Citation metadata and the final software license will be added after author and repository metadata are confirmed. Until then, this is a review draft rather than a licensed archival release.
+Please cite this software using [`CITATION.cff`](CITATION.cff). GitHub also provides a **Cite this repository** button derived from that file.
+
+```bibtex
+@software{jiang2026goback,
+  author  = {Haoyang Jiang},
+  title   = {Go Back to Move Forward: Measurement-Guided Recourse for a Frozen Generative Flow},
+  year    = {2026},
+  version = {0.1.0},
+  url     = {https://github.com/HaoyangJiang-WM/FWI}
+}
+```
+
+## License
+
+Copyright © 2026 Haoyang Jiang. The software is released under the [MIT License](LICENSE). Dataset files, pretrained checkpoints, and external dependencies may be governed by separate licenses and are not relicensed by this repository.
