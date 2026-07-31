@@ -4,7 +4,7 @@ This appendix separates FWI-specific choices from the generic frozen-flow interf
 
 ## Model and observation interface
 
-The frozen prior generates a normalized scalar geological field of shape `1 x 1 x 70 x 70`; decoded endpoints are clipped to `[-1, 1]` before the acoustic forward evaluation. The pretrained checkpoint recorded by the execution wrapper is `flow_lsd_step_3000.pt`. The checkpoint bytes and their license are not yet public, so the current release cannot independently reproduce full acoustic runs.
+The frozen prior generates a normalized scalar geological field of shape `1 × 1 × 70 × 70`; decoded endpoints are clipped to `[-1, 1]` before the acoustic forward evaluation. The pretrained checkpoint recorded by the execution wrapper is `flow_lsd_step_3000.pt`. The checkpoint bytes and their license are not yet public, so the current release cannot independently reproduce full acoustic runs.
 
 The differentiable acoustic backend returns public observations with axes `[batch, acquisition, time, receiver]`. Five acquisition groups are split before selection:
 
@@ -13,9 +13,9 @@ The differentiable acoustic backend returns public observations with axes `[batc
 
 For a prediction `p` and public observation `h`, source candidates are ranked by the lexicographic key
 
-\[
+$$
 k(p,h)=(\bar r_{\mathrm{bb}},\max r_{\mathrm{bb}},r_{\Delta_t^2},r_{\Delta_t},r_{\mathrm{phase}}),
-\]
+$$
 
 where broadband terms are acquisition-wise residual RMS values, the next two entries are global RMS values of second and first time differences, and the phase proxy is one minus the mean cosine similarity between first-time-difference traces. The key is computed separately on probe-fit and source-selection acquisitions. Feasible records are ordered by selection key, fit key, and frozen D4 declaration order. The selection split is not an independent test set. The exact implementation is public in `src/flowmap_multiback/public_h_metrics.py` and `public_h_selection.py`.
 
@@ -41,7 +41,7 @@ The grid, D4 universe, selector, one-draw rule, and truth role were recorded bef
 1d518e6ebf992f6e459162f2d01ff0fbaf4c74c9049fed27c12ec1111aff286a.
 ```
 
-The public audit contains all 25 x 8 source records, chosen transforms, public keys, event order, decision hashes, and postdecision truth hashes. It verifies that all equal-budget D4 probes close before the source decision and that truth events occur after source and interface decisions. It does not prove that no related development case was ever inspected during earlier algorithm development; the paper therefore calls these evaluation cases rather than universally unseen cases.
+The public audit contains all 25 × 8 source records, chosen transforms, public keys, event order, decision hashes, and postdecision truth hashes. It verifies that all equal-budget D4 probes close before the source decision and that truth events occur after source and interface decisions. It does not prove that no related development case was ever inspected during earlier algorithm development; the paper therefore calls these evaluation cases rather than universally unseen cases.
 
 ## D4 source screen
 
@@ -67,10 +67,10 @@ tau = sqrt(0.50), rho = sqrt(0.75).
 
 The derived source and Back RMS radii are
 
-\[
+$$
 R_s=\sqrt{1-q_\tau}=\sqrt{0.5},\qquad
 R_b=\sqrt{q_\rho-q_\tau}=0.5.
-\]
+$$
 
 The frozen band schedule is:
 
@@ -84,7 +84,7 @@ The historical solver records deterministic warm continuation, reopening of five
 
 ## Postdecision metrics
 
-MSE is computed on normalized model fields. Boundary F1 first extracts the top 10% gradient-magnitude pixels independently in the model and truth. Precision and recall count an edge as matched when its nearest edge in the other image lies within two pixels; their harmonic mean is reported. Truth is used only after the endpoint decision record closes.
+MSE is computed on normalized model fields. Boundary F1 extracts an exact, deterministic top 10% of strictly positive gradient-magnitude pixels independently in the model and truth. Precision and recall count an edge as matched when its nearest edge in the other image lies within two pixels; their harmonic mean is reported. Two boundary-free fields score 1, while a boundary-free field compared with a nonempty boundary set scores 0. Truth is used only after the endpoint decision record closes.
 
 Right-third MSE is a diagnostic restricted to the rightmost third of the field. It is reported in the machine-readable aggregate but is not used for selection.
 
