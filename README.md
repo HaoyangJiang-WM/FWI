@@ -90,9 +90,9 @@ For a concrete $x\rightarrow y$ example:
 - $x\in\mathbb R^{70\times70}$ is one layered velocity image, where each pixel represents normalized subsurface velocity.
 - $y=H(x)\in\mathbb R^{5\times150\times70}$ is its synthetic seismic record: five sources, 150 time steps, and 70 receivers. A single trace $y_{s,:,r}$ is the amplitude recorded over time at receiver $r$ after firing source $s$.
 
-![Observed seismic data y with five source gathers](assets/figures/case5_observed_y.png)
+![Velocity model x and its five-source observed seismic data y](assets/figures/fwi_xy_example.png)
 
-*Actual Case-5 observation $y$ produced by the project data-generation pipeline. The five panels are the five source gathers; receiver index is horizontal, time step is vertical, and color is normalized waveform amplitude.*
+*Actual paired example from the project data-generation pipeline. The left panel is the velocity model $x$; the five right panels are the source gathers in $y=H(x)$. Receiver index is horizontal, time step is vertical, and color denotes normalized waveform amplitude.*
 
 Thus, changing an interface in $x$ changes reflection arrival times and amplitudes throughout $y$. FWI solves the difficult inverse direction $y\mapsto x$, while the acoustic simulator evaluates the forward direction $x\mapsto H(x)$.
 
