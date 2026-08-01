@@ -29,10 +29,6 @@ Conditional generative models can represent richer outputs, but their conditioni
 
 MBF asks whether a short monotone path provides enough task-relevant control directions to escape an incorrect reconstruction basin.
 
-![Multi-Back motivation](assets/figures/multi_back_motivation.png)
-
-*Few-step control can remain trapped in a locally reachable basin. Multi-Back revisits an earlier, higher-noise time, applies a connected control, and follows a newly reachable branch toward the reward.*
-
 ## Flow Map prior
 
 A two-time Flow Map directly transports a state between arbitrary generative times:
@@ -52,6 +48,10 @@ z_{t_{i+1}}
 Unlike a velocity model that must be integrated over each interval, a learned Flow Map performs long temporal transitions directly. Its two-time interface also allows generative time to be used as a bidirectional optimization coordinate.
 
 ## Multi-Back Flow
+
+![Multi-Back motivation](assets/figures/multi_back_motivation.png)
+
+*Few-step control can remain trapped in a locally reachable basin. Multi-Back revisits an earlier, higher-noise time, applies a connected control, and follows a newly reachable branch toward the reward.*
 
 A controlled monotone transition is
 
