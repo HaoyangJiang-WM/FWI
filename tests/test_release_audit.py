@@ -8,6 +8,8 @@ from pathlib import Path
 import subprocess
 import sys
 
+import numpy as np
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -62,3 +64,15 @@ def test_plot_cli_writes_requested_output(tmp_path: Path) -> None:
     )
     assert output.is_file()
     assert output.stat().st_size > 10_000
+
+
+def test_paper_figure_uses_lowest_mse_seed_per_case() -> None:
+    figure_module = _load_module("paper_figures", ROOT / "plot_paper_figures.py")
+    summary = json.loads(
+        (ROOT / "results/final_25_summary.json").read_text(encoding="utf-8")
+    )
+    mse, f1, seeds = figure_module.row_oracle(summary)
+    assert seeds == [20268332, 20268332, 20268432, 20268432, 20268232]
+    matrix = np.asarray(summary["matrices"]["final_mse"], dtype=float)
+    assert np.allclose(mse, matrix.min(axis=1))
+    assert mse.shape == f1.shape == (5,)

@@ -80,17 +80,17 @@ The fixed final protocol uses five evaluation cases crossed with five prespecifi
 
 The final stage is associated with a mean MSE reduction of 0.00495, but MSE worsens in 6/25 runs. Because the endpoint solve reopens source and recourse blocks together, this delta cannot be attributed causally to Multi-Back alone. The 25 cells form a crossed case-by-seed design, not 25 independent tasks.
 
-### Internal source-stage → final endpoint attribution
+### Figure 1: baselines versus row-oracle ours
 
-![Paired source-stage to final endpoint attribution](assets/figures/source_to_multiback_attribution.png)
+![Frozen baselines versus the lowest-MSE seed selected per case](assets/figures/method_comparison.png)
 
-This is paired component attribution within one pipeline, not a compute-matched independent baseline or a causal 2 × 2 ablation.
+For ours, this figure selects the lowest-truth-MSE seed separately within each case from the final five-seed panel (seed suffixes `332, 332, 432, 432, 232`). It is intentionally a post-hoc row-oracle visualization, not an inference-time selector, an unbiased aggregate, or a compute-matched superiority claim.
 
-### Five cases by five raw seeds
+### Figure 2: five cases by five raw seeds
 
 ![Multi-seed reconstruction panel](assets/figures/multiseed_models.png)
 
-![Multi-seed metric heatmaps](assets/figures/multiseed_metrics.png)
+This panel shows all 25 outputs and therefore exposes the variation hidden by Figure 1's row-oracle presentation.
 
 The machine-readable aggregate is in [`results/final_25_summary.json`](results/final_25_summary.json). The full 25 × 8 D4 decision ledger is in [`results/d4_public_h_decision_audit.json`](results/d4_public_h_decision_audit.json). Its canonical payload hash is `094903548fe3908de71f191d253593c8d67c2df43ac2f3f9667fa328dd25e980`.
 
@@ -116,10 +116,10 @@ source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -e ".[test]"
 pytest -q
 python analyze_final_panel.py
-python plot_attribution.py
+python plot_paper_figures.py
 ```
 
-Run these commands from the repository root. The analyzer verifies the balanced 5 × 5 panel, the 25 × 8 decision ledger, record hashes, and canonical release hash.
+Run these commands from the repository root. The analyzer verifies the balanced 5 × 5 panel, the 25 × 8 decision ledger, record hashes, and canonical release hash. The plotting command regenerates Figure 1; Figure 2 requires the field tensors retained by the research backend and is shipped as a frozen artifact.
 
 ## Reproducibility boundary
 

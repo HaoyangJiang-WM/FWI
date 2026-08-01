@@ -66,19 +66,19 @@ We use a frozen optimal-transport FlowMap trained as an unconditional $70\times7
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\columnwidth]{../assets/figures/multiseed_models.png}
-\caption{Truth and final reconstructions for five evaluation cases crossed with five prespecified raw seeds.}
-\label{fig:models}
+\includegraphics[width=\columnwidth]{../assets/figures/method_comparison.png}
+\caption{Frozen task-trained baselines versus ours with the lowest-MSE seed selected separately for each case. This post-hoc row-oracle view uses truth MSE and is not an inference-time selection rule or a compute-matched superiority claim.}
+\label{fig:comparison}
 \end{figure}
 
 \paragraph{Cross-seed results.}
-Figure~\ref{fig:metrics} reports the balanced case-by-seed matrix. The final endpoints obtain mean/maximum-observed MSE $0.00929/0.02305$, mean/minimum boundary F1 $0.8905/0.7526$, and mean right-third MSE $0.00907$. Mean runtime is 2,978 seconds per cell. The 25 cells form a crossed design over only five geological cases; they are not 25 independent tasks.
+Figure~\ref{fig:models} reports the balanced case-by-seed reconstruction matrix. The final endpoints obtain mean/maximum-observed MSE $0.00929/0.02305$ and mean/minimum boundary F1 $0.8905/0.7526$. Mean runtime is 2,978 seconds per cell. The 25 cells form a crossed design over only five geological cases; they are not 25 independent tasks.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\columnwidth]{../assets/figures/multiseed_metrics.png}
-\caption{Five evaluation cases (rows) crossed with five prespecified raw seeds (columns). One endpoint is reported per cell without truth-based post-hoc seed or endpoint selection.}
-\label{fig:metrics}
+\includegraphics[width=\columnwidth]{../assets/figures/multiseed_models.png}
+\caption{Truth and final reconstructions for five evaluation cases (rows) crossed with five prespecified raw seeds (columns). Unlike Fig.~\ref{fig:comparison}'s explicit row-oracle summary, this panel shows every run.}
+\label{fig:models}
 \end{figure}
 
 \begin{table}[t]
@@ -98,14 +98,7 @@ F1 improved & -- & 22/25\\
 \end{table}
 
 \paragraph{Component attribution.}
-Relative to the internal source stage, the final endpoint reduces mean MSE by $0.00495$. It improves MSE in 19/25 cells and worsens it in 6/25; boundary F1 improves in 22/25. Figure~\ref{fig:attribution} reports every paired change. This supports component attribution inside the implemented pipeline but does not identify a causal source--Multi-Back interaction.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{../assets/figures/source_to_multiback_attribution.png}
-\caption{Internal source-stage to final-endpoint MSE changes. Blue denotes improvement and red regression. This is not a compute-matched independent baseline.}
-\label{fig:attribution}
-\end{figure}
+Relative to the internal source stage, the final endpoint reduces mean MSE by $0.00495$. It improves MSE in 19/25 cells and worsens it in 6/25; boundary F1 improves in 22/25. This supports component attribution inside the implemented pipeline but does not identify a causal source--Multi-Back interaction.
 
 \section{Limitations and Conclusion}
 This technical draft contains only five geological cases, one synthetic acquisition family, and one frozen flow prior. It requires differentiable physics and intermediate trajectory access and is computationally expensive. Its D4 stage performs public-objective candidate selection, and the nonconvex solver has no global recovery guarantee. Matched external baselines, a source off/on $\times$ Multi-Back off/on experiment, uncertainty over more independent cases, and a licensed end-to-end release remain necessary for a formal submission.

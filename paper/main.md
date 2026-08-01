@@ -99,17 +99,17 @@ We use a frozen optimal-transport FlowMap trained as an unconditional $70\times7
 
 FWI-specific acquisition, checkpoint, split, exposure-history, and metric details are separated into the [archival appendix](../docs/fwi_appendix.md), keeping the main formulation task-agnostic.
 
-### 3.1 Reconstruction comparison across seeds
+### 3.1 Baseline comparison with row-oracle ours
+
+![Frozen baselines compared with the lowest-MSE seed selected separately for each evaluation case.](../assets/figures/method_comparison.png)
+
+*Figure 1. Frozen task-trained baselines versus ours with the lowest-MSE seed selected separately for each evaluation case. The selected seed suffixes are 332, 332, 432, 432, and 232 in row order. This is a post-hoc row-oracle visualization using truth MSE, not an inference-time selection rule or a compute-matched superiority claim.*
+
+### 3.2 Five cases × five seeds
 
 ![Truth and final reconstructions for five evaluation cases crossed with five prespecified raw seeds.](../assets/figures/multiseed_models.png)
 
-*Figure 1. Truth and final reconstructions for five evaluation cases crossed with five prespecified raw seeds.*
-
-### 3.2 Cross-seed metrics
-
-![Five evaluation cases crossed with five prespecified raw seeds.](../assets/figures/multiseed_metrics.png)
-
-*Figure 2. Five evaluation cases (rows) crossed with five prespecified raw seeds (columns). One endpoint is reported per cell without truth-based post-hoc seed or endpoint selection.*
+*Figure 2. Truth and final reconstructions for five evaluation cases (rows) crossed with five prespecified raw seeds (columns). Unlike Figure 1's explicit row-oracle summary, this panel shows every run.*
 
 The final endpoints obtain mean/maximum-observed MSE **0.00929/0.02305** and mean/minimum boundary F1 **0.8905/0.7526**. Mean runtime is 2,978 seconds per cell. The unit of task variation is the geological case ($n=5$); seeds are repeated runs within case. We therefore report the complete crossed panel and paired cell-wise attribution descriptively, without treating the 25 cells as independent samples or claiming population-level significance.
 
@@ -121,12 +121,6 @@ The final endpoints obtain mean/maximum-observed MSE **0.00929/0.02305** and mea
 | Boundary F1 improved | — | 22/25 |
 
 *Table 1. Internal source-stage and final-endpoint metrics. The source stage is not a compute-matched independent baseline.*
-
-### 3.3 Source-to-Multi-Back component attribution
-
-![Internal source-stage to final-endpoint MSE changes.](../assets/figures/source_to_multiback_attribution.png)
-
-*Figure 3. Internal source-stage to final-endpoint MSE changes. Blue denotes improvement and red regression. This is not a compute-matched independent baseline.*
 
 Relative to the internal source stage, the final endpoint reduces mean MSE by **0.00495**. It improves MSE in 19/25 cells and worsens it in 6/25; boundary F1 improves in 22/25. This supports component attribution inside the implemented pipeline but does not identify a causal source–Multi-Back interaction. A compute-matched source off/on $\times$ Multi-Back off/on experiment is still needed for that claim.
 
