@@ -83,7 +83,7 @@ $$
 
 The trajectory then continues toward the data endpoint. For $M$ modules, let $\Gamma=\{(\tau_m,\rho_m)\}_{m=1}^M$ and $b=(b_1,\ldots,b_M)$. Inserting these events yields $x_{\mathrm{MBF}}(c,b;\Gamma)=\mathcal G_{\mathrm{MBF}}(\xi;c,b,\Gamma)$. The operation is not a random restart or re-noising step: it follows the same frozen two-time Flow Map and optimizes the Back controls as part of one trajectory.
 
-Let $J_c=D_cx_{\mathrm{MBF}}$ and $J_b=D_bx_{\mathrm{MBF}}$. The joint local endpoint space is $\operatorname{range}([J_c,J_b])$, which contains $\operatorname{range}(J_c)$. Under a joint perturbation budget $\|[\delta c;\delta b]\|\le\epsilon$, the maximum first-order decrease is
+Let $J_c=D_cx_{\mathrm{MBF}}$ and $J_b=D_bx_{\mathrm{MBF}}$. The joint local endpoint space is $\mathrm{range}([J_c,J_b])$, which contains $\mathrm{range}(J_c)$. Under a joint perturbation budget $\|[\delta c;\delta b]\|\le\epsilon$, the maximum first-order decrease is
 
 $$
 \epsilon\sqrt{\|J_c^\top g\|^2+\|J_b^\top g\|^2}.
