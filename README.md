@@ -90,6 +90,10 @@ For a concrete $x\rightarrow y$ example:
 - $x\in\mathbb R^{70\times70}$ is one layered velocity image, where each pixel represents normalized subsurface velocity.
 - $y=H(x)\in\mathbb R^{S\times T\times R}$ is its synthetic seismic record: $S$ source/acquisition indices, $T$ time samples, and $R$ receivers. A single trace $y_{s,:,r}$ is the amplitude recorded over time at receiver $r$ after firing source $s$.
 
+![Schematic receiver gather illustrating one observation y equals H of x](assets/figures/fwi_observation_example.png)
+
+*Schematic example of one source gather $y_s$: receiver index is horizontal, recording time is vertical, and color is normalized waveform amplitude. This explanatory image is not an evaluation sample because the released repository does not yet include the benchmark observation tensors.*
+
 Thus, changing an interface in $x$ changes reflection arrival times and amplitudes throughout $y$. FWI solves the difficult inverse direction $y\mapsto x$, while the acoustic simulator evaluates the forward direction $x\mapsto H(x)$.
 
 The repository also uses the name **public-$H$ key** for a lexicographic waveform-residual score used in truth-free source screening. That score is computed from $H(x)$ and $y$; it should not be confused with the forward operator $H$ itself. Its exact implementation is in [`public_h_metrics.py`](src/flowmap_multiback/public_h_metrics.py).
