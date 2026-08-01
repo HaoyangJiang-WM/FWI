@@ -7,6 +7,9 @@
 [![Tests](https://github.com/HaoyangJiang-WM/FWI/actions/workflows/tests.yml/badge.svg)](https://github.com/HaoyangJiang-WM/FWI/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+**Paper:** [Full paper (Markdown)](paper/main.md) · [LaTeX source](paper/main.tex)  
+**中文:** [README](README_zh.md) · [论文全文](paper/main_zh.md)
+
 Multi-Back Flow (MBF) adapts a **frozen unconditional Flow Map** to a new inverse problem at inference time. The generative prior remains fixed; measurement information enters only through the optimization objective.
 
 The key idea is to replace a strictly monotone few-step trajectory with a controlled, non-monotone path. When a long Flow Map transition commits the reconstruction to a poor basin, MBF returns to an earlier generative time, applies a task-driven control, and moves forward again.
@@ -108,6 +111,7 @@ This repository is a compact method, paper, and audit release. Reproducing the c
 ## Paper and documentation
 
 - [Markdown paper](paper/main.md)
+- [Chinese Markdown paper](paper/main_zh.md)
 - [LaTeX paper](paper/main.tex)
 - [Theory notes](docs/theory.md)
 - [FWI appendix](docs/fwi_appendix.md)
