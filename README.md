@@ -66,6 +66,34 @@ MBF is therefore not a DPS update transplanted to Flow Maps. It is a trajectory-
 
 ## FWI results
 
+### What is FWI?
+
+Full-waveform inversion (FWI) reconstructs a subsurface velocity model from seismic recordings. Let $x(\mathbf r)$ denote the velocity at spatial location $\mathbf r$. For source $s$, the acoustic wavefield $u_s$ satisfies
+
+```math
+\frac{1}{x(\mathbf r)^2}\frac{\partial^2 u_s(\mathbf r,t)}{\partial t^2}
+-\nabla^2u_s(\mathbf r,t)=q_s(\mathbf r,t),
+```
+
+where $q_s$ is the source wavelet. Sampling the simulated wavefield at receiver locations defines the differentiable forward operator $H$:
+
+```math
+y_{s,r}(t)=[H(x)]_{s,t,r}+\varepsilon_{s,r}(t),
+\qquad
+\hat{x}=\arg\min_x\;\mathcal L\!\left(H(x),y\right)+\lambda R(x).
+```
+
+Here $y$ contains the observed receiver traces, $\varepsilon$ denotes measurement/modeling error, and $R$ is an optional prior or constraint. In this project, the frozen Flow Map supplies the prior and Multi-Back controls optimize waveform consistency through $H$; the Flow Map itself is not retrained.
+
+For a concrete $x\rightarrow y$ example:
+
+- $x\in\mathbb R^{70\times70}$ is one layered velocity image, where each pixel represents normalized subsurface velocity.
+- $y=H(x)\in\mathbb R^{S\times T\times R}$ is its synthetic seismic record: $S$ source/acquisition indices, $T$ time samples, and $R$ receivers. A single trace $y_{s,:,r}$ is the amplitude recorded over time at receiver $r$ after firing source $s$.
+
+Thus, changing an interface in $x$ changes reflection arrival times and amplitudes throughout $y$. FWI solves the difficult inverse direction $y\mapsto x$, while the acoustic simulator evaluates the forward direction $x\mapsto H(x)$.
+
+The repository also uses the name **public-$H$ key** for a lexicographic waveform-residual score used in truth-free source screening. That score is computed from $H(x)$ and $y$; it should not be confused with the forward operator $H$ itself. Its exact implementation is in [`public_h_metrics.py`](src/flowmap_multiback/public_h_metrics.py).
+
 The current study uses one frozen Flow Map prior for synthetic full-waveform inversion, with five geological cases and five prespecified seeds per case.
 
 ### Baseline comparison
