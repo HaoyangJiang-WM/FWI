@@ -86,6 +86,10 @@ The final stage is associated with a mean MSE reduction of 0.00495, but MSE wors
 
 For ours, this figure selects the lowest-truth-MSE seed separately within each case from the final five-seed panel (seed suffixes `332, 332, 432, 432, 232`). It is intentionally a post-hoc row-oracle visualization, not an inference-time selector, an unbiased aggregate, or a compute-matched superiority claim.
 
+The same six baselines are summarized quantitatively below; UPFWI is excluded from both panels.
+
+![Aggregate and per-case baseline metrics](assets/figures/method_comparison_bars.png)
+
 ### Figure 2: five cases by five raw seeds
 
 ![Multi-seed reconstruction panel](assets/figures/multiseed_models.png)
