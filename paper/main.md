@@ -1,111 +1,121 @@
-# Go Back to Move Forward: Measurement-Guided Recourse for a Frozen Generative Flow
+# Multi-Back Flow: Optimization-Guided Flow Maps for Inverse Problems
 
-**Anonymous Authors**
+**Haoyang Jiang — William & Mary**
 
 ## Abstract
 
-Frozen generative models encode structural priors, yet adapting them to new inverse problems remains difficult. In ambiguous inverse problems, deterministic regressors trained with pointwise losses can average across plausible interface locations. Task-specific conditional generators can favor sharper point predictions but often couple the conditioning modality or acquisition operator to training. We introduce **Symmetry-Screened Multi-Back**, an inference-time interface for a frozen unconditional flow map. The implementation ranks eight norm-preserving D4 source transforms using public measurement features, then optimizes exactly anchored trajectory controls against a differentiable observation loss. One endpoint is reported for every prespecified case–seed run without truth-based post-hoc selection.
+Pretrained generative models provide reusable priors for inverse problems, but conditioning them on a new measurement operator remains challenging. Supervised inverse networks offer fast inference yet couple the reconstruction rule to the operators and acquisition settings represented during training; under multimodal ambiguity, pointwise regression can further favor conditional averages. Diffusion posterior methods avoid task-specific retraining by introducing measurement information at inference time, but often require long denoising chains or repeated posterior refinement. Optimization-Guided Diffusion (OGD) instead optimizes controls along a frozen DDIM trajectory, providing a natural interface between a generative prior and a deployment objective.
 
-On five synthetic full-waveform inversion (FWI) evaluation cases crossed with five seeds, the final endpoints obtain mean MSE **0.00929**, maximum observed MSE **0.02305**, and mean boundary F1 **0.8905**. Across this fixed panel, the final stage is associated with lower aggregate error than its recorded internal source checkpoint. These experiments assess repeatability and component attribution for one frozen flow prior—not superiority over external methods or a causal Multi-Back effect.
+We introduce **Multi-Back Flow (MBF)**, which extends optimization-guided generation from a fixed denoising chain to a non-monotone trajectory built from a frozen two-time Flow Map. Flow maps enable few-step generation through long temporal transitions, but a few-step monotone path exposes only a small number of control locations and can become locally locked when the task gradient is poorly represented by its endpoint control Jacobian. MBF inserts controlled backward–forward transitions to earlier generative times, where additional controls open endpoint directions unavailable to the monotone parameterization. The method optimizes source, monotone, and Back controls jointly while keeping the generative model frozen. We provide a local descent characterization of basin lock and show how Multi-Back controls restore first-order descent directions. A synthetic full-waveform inversion study demonstrates the current implementation; broader validation across operators and domains remains future work.
 
 ## 1. Introduction
 
-Amortized inverse networks such as U-Nets [1] map measurements to a single reconstruction. With squared-error supervision, the population-optimal deterministic predictor is the conditional mean. If a measurement is compatible with several displaced but sharp interfaces, this mean superposes them and may therefore be smooth even when every plausible solution is sharp. Related perception–distortion results show that distortion-optimal restoration need not optimize distributional perceptual quality [6]; they do not constitute a theorem about interface sharpness or U-Net architectures.
+Inverse problems seek to recover an unknown object $x$ from incomplete, noisy, or indirect observations $y$. A useful reconstruction must satisfy both measurement consistency and structural plausibility. Supervised deterministic inverse networks, including U-Net-style encoder–decoders and InversionNet, directly learn $f_\theta:y\mapsto x$ from paired data and provide fast inference [1,2]. Their reconstruction rule, however, is tied to the observation distributions and acquisition configurations represented during training. Moreover, under squared error the population-optimal deterministic predictor is $f^\star(y)=\mathbb E[x\mid y]$; when one observation is compatible with multiple sharp solutions, this conditional average can blur or superpose distinct modes [3]. Neural operators such as FNO learn mappings between function spaces and efficiently amortize repeated solves over a parameterized operator family, but inverse use still depends on the operators, parameter ranges, and discretizations covered by training [4]. Conditional generative models such as pix2pix and VelocityGAN can encourage sharper outputs through adversarial training, yet their conditioning interfaces remain tied to paired task-specific data [5,6].
 
-Conditional adversarial generators [2] can represent sharper conditional outputs, but they amortize a particular family of conditions seen during training. Scaling this strategy to heterogeneous modalities, acquisition geometries, and forward operators requires those conditions to be represented, paired with targets, and covered by the training distribution. This is a coverage and interface burden rather than a fundamental limitation of GANs. We study an orthogonal axis: keeping the prior frozen and introducing a new differentiable operator only through an inference-time objective.
+Pretrained unconditional generative models provide a more modular alternative: the model learns a prior over solutions, while a new measurement operator enters only at inference time. Diffusion-based inverse methods have pursued this idea through several routes. Analytic methods exploit special linear structure; manifold- or likelihood-guided methods such as MCG, DPS, and $\Pi$GDM modify the reverse process using measurement information; optimization and resampling methods impose stronger data consistency in clean or latent space [7–11]. These approaches substantially broaden the reuse of a frozen prior, but commonly require repeated denoiser evaluations, forward-operator calls, or inner refinement across many noise levels. They also inherit strong path dependence from locally coupled denoising transitions. DAPS explicitly identifies the resulting difficulty of correcting early global errors and decouples consecutive noise levels through clean-space posterior sampling followed by fresh-noise annealing [12].
 
-Pretrained score and flow models provide unconditional generative priors [3,4]; minibatch optimal-transport couplings have also been developed for flow matching [10]. These priors can be conditioned at inference time. Earlier work has optimized a frozen invertible generative prior for inverse problems [7]. Diffusion posterior sampling, for example, inserts a likelihood gradient into a pretrained sampling process [5]. This motivates testing whether non-monotone trajectory recourse can add useful inference-time directions while explicitly preventing zero-control improvements from numerical round-trip defects.
+OGD offers a complementary optimization view: instead of directly adding an external guidance gradient to the sample, it replaces perturbations along a fixed DDIM trajectory with optimized controls, turning inference into constrained trajectory optimization while keeping the generator frozen [13]. This formulation is a natural starting point for general inverse and constrained-generation problems, but its controls remain attached to a prescribed monotone denoising chain. Flow Map Matching learns the two-time transport map of an underlying generative dynamics and supports long transitions between arbitrary generative times, enabling one- or few-step generation with a post-training choice of step count [14]. Replacing DDIM transitions with Flow Map transitions therefore reduces generative cost, but it does not remove the restriction to a monotone source-to-data path.
 
-We treat the frozen trajectory as a small controllable system. The reported pipeline combines:
+Few-step optimization makes this restriction especially important. For a schedule $1=t_0>\cdots>t_K=0$, at least one transition spans $1/K$ or more in generative time, while only $K$ locations are available for injecting ordinary controls. An early control is therefore propagated through a long transition and can strongly determine the basin reached by the remaining path. Near a locally restricted endpoint, the task gradient may have only a weak projection onto the endpoint directions generated by the monotone controls, producing **few-step basin lock**. We propose **Multi-Back Flow (MBF)** to address this failure mode. MBF treats generative time as a bidirectional optimization coordinate: it returns a trajectory state to an earlier generative time, applies a task-driven Back control, and transports the controlled state forward again. Multiple Back modules can be inserted at different scales and jointly optimized with the original trajectory controls.
 
-1. public-objective selection over fixed D4 source transforms;
-2. exactly identity-anchored non-monotone recourse; and
-3. joint endpoint optimization under a frozen public objective.
+Conceptually, MBF extends optimization-guided generation from control on a fixed chain to non-monotone control on a two-time flow graph. Unlike posterior re-noising, restart sampling, or DAPS-style annealing, MBF does not draw a fresh noisy posterior state; the backward–forward transition is part of a deterministic controlled trajectory. Our contributions are: (i) an optimization-guided formulation for few-step Flow Maps; (ii) a local characterization of few-step basin lock through the projected task gradient; (iii) Multi-Back temporal recourse that adds endpoint control directions from earlier generative scales; and (iv) a joint inference-time framework that accommodates general differentiable objectives and constraints without retraining the generative prior.
 
-The inverse-task condition enters only at inference time; generator weights remain frozen. The broader foundation-model connection is a hypothesis rather than a demonstrated result. Anchored recourse may be applicable to frozen differentiable trajectory generators with accessible intermediate states and derivatives; the D4 screen is image- and symmetry-specific. This paper evaluates neither a foundation model nor cross-prior transfer.
+## 2. Preliminaries
 
-## 2. Method
+### 2.1 Inverse problems with frozen generative priors
 
-Let $\Phi_{t\leftarrow s}$ be a frozen differentiable flow, $A$ a differentiable observation operator, and $y$ a measurement. Given $\xi\sim\mathcal N(0,I)$ and fixed D4 action set $G$, every transform first receives the same fit-only source-probe budget:
+We consider observations $y=\mathcal A(x^\star)+\eta$, where $x^\star\in\mathcal X$ is unknown, $\mathcal A:\mathcal X\to\mathcal Y$ is a known forward operator, and $\eta$ is measurement noise. A task loss $\mathcal L_y(x)=\ell(\mathcal A(x),y)$ measures consistency; for Gaussian noise, $\mathcal L_y(x)=\|\mathcal A(x)-y\|^2/(2\sigma_y^2)$. Additional constraints may be written as $g_j(x)\le0$ and $h_\ell(x)=0$. The generative prior is pretrained independently of $\mathcal A$ and remains frozen during inference.
 
-$$
-s_g^{\mathrm{probe}}
-=\arg\min_{s\in\mathcal B_{\mathrm{probe}}}
-\ell_{\mathrm{fit}}\!\left(A_{\mathrm{fit}}(R_0(Q_g\xi+s)),y_{\mathrm{fit}}\right).
-$$
+### 2.2 Optimization-Guided Diffusion
 
-The probe-fit and source-selection keys are
+A stochastic DDIM transition can be written schematically as $x_{k-1}=\mu_\theta(x_k,k)+\sigma_k\omega_k$, with $\omega_k\sim\mathcal N(0,I)$. OGD replaces $\omega_k$ with an optimized correction $\delta_k$ and solves a trajectory-level objective such as
 
 $$
-k_g^{\mathrm{sel}}=K\!\left(A_{\mathrm{sel}}(R_0(Q_g\xi+s_g^{\mathrm{probe}})),y_{\mathrm{sel}}\right),
-\qquad
-k_g^{\mathrm{fit}}=K\!\left(A_{\mathrm{fit}}(R_0(Q_g\xi+s_g^{\mathrm{probe}})),y_{\mathrm{fit}}\right).
+\min_{x_K,\{\delta_k\}}\;\mathcal L_y(x_0)+\frac{\lambda_K}{2}\|x_K\|^2+\frac12\sum_{k=1}^K\lambda_k\|\delta_k\|^2,
+\quad x_{k-1}=\mu_\theta(x_k,k)+\sigma_k\delta_k.
 $$
 
-Candidates are ranked by the complete selection tuple, then the complete fit tuple, then frozen D4 order:
+The quadratic control cost limits deviation from the frozen generative trajectory, while the task term enforces deployment objectives. MBF inherits this control-space view but replaces the fixed DDIM chain with a two-time Flow Map and augments the monotone path with temporal recourse.
+
+### 2.3 Two-time Flow Maps
+
+Let $\Phi_\theta(\cdot;r,t):\mathcal X_r\to\mathcal X_t$ denote a learned two-time Flow Map, abbreviated as $\Phi_{t\leftarrow r}$. It approximates transport between arbitrary generative times $r,t\in[0,1]$. For a schedule $1=t_0>\cdots>t_K=0$, few-step generation uses $z_{t_{i+1}}=\Phi_{t_{i+1}\leftarrow t_i}(z_{t_i})$. Unlike a velocity model that must be numerically integrated over every interval, a learned Flow Map directly provides long temporal transitions and allows the number of sampling steps to be selected after training [14]. Its two-time interface also permits mappings toward earlier generative times, which MBF uses as optimization coordinates rather than as fresh-noise resampling operations.
+
+## 3. Multi-Back Flow
+
+MBF first constructs an optimization-guided monotone Flow Map trajectory, then inserts controlled backward–forward transitions and jointly optimizes all controls. The framework is independent of any particular forward operator or application domain.
+
+### 3.1 Controlled monotone Flow Maps
+
+Given $1=t_0>\cdots>t_K=0$ and a source sample $\xi\sim p_{\mathrm{src}}$, we optionally adjust the source by $z_{t_0}=\xi+B_{\mathrm{src}}a$, where $a$ is a source displacement; setting $a=0$ fixes the source. Ordinary controls $u_i$ are injected before each long transition:
 
 $$
-g^\star=\operatorname*{argmin}^{\mathrm{lex}}_{g\in G}
-\left(k_g^{\mathrm{sel}},k_g^{\mathrm{fit}},\operatorname{ord}_G(g)\right).
+z_{t_{i+1}}=\Phi_{t_{i+1}\leftarrow t_i}(z_{t_i}+B_i u_i),\qquad i=0,\ldots,K-1.
 $$
 
-The winning transformed raw source is cached; its continuous source control and trajectory recourse are then reoptimized jointly:
+The injection operators $B_{\mathrm{src}}$ and $B_i$ may be identities, low-rank bases, or structured task-independent parameterizations. Writing $c=(a,u_0,\ldots,u_{K-1})$, the endpoint is $x_{\mathrm{mono}}(c)=\mathcal G_{\mathrm{mono}}(\xi;c)$. The monotone optimization problem is
 
 $$
-(s^\star,v^\star)=\arg\min_{s,v}
-\ell_{\mathrm{pub}}\!\left(A(R(Q_{g^\star}\xi+s,v)),y\right)
-\quad\text{s.t.}\quad \mathcal A(s,v)\le 1.
+\min_c\;\mathcal L_y(x_{\mathrm{mono}}(c))+\frac{\lambda_{\mathrm{src}}}{2}\|a\|^2+\frac12\sum_{i=0}^{K-1}\lambda_i\|u_i\|^2,
 $$
 
-Here $\mathcal B_{\mathrm{probe}}$ is the common probe budget, $R_0$ is the probe reconstruction, $K_{\mathrm{sel}}$ is a prespecified lexicographic measurement key, and $\mathcal A$ is the joint action constraint. Each candidate is optimized on a probe-fit acquisition subset and ranked on a disjoint source-selection subset. The latter is held out from probe fitting but used for model selection; it is not an independent test set. The probe displacement is not inherited: the winning transformed raw source is cached, and downstream $s$ is reoptimized with $v$. The endpoint solver jointly reopens all five implemented physical blocks. One chronological endpoint solve follows the finite screen, and one endpoint is reported. Ground truth is unavailable to every optimizer decision.
+with the source term omitted when $a=0$. A constrained variant minimizes control energy subject to $\mathcal L_y(x_{\mathrm{mono}})\le\varepsilon$ and any additional $g_j(x_{\mathrm{mono}})\le0$, $h_\ell(x_{\mathrm{mono}})=0$.
 
-### 2.1 Norm-preserving D4 source screen
+### 3.2 Few-step basin lock
 
-Each fixed $Q_g$ is an orthogonal permutation, so $\|Q_g\xi\|=\|\xi\|$ and the pointwise isotropic-Gaussian log density is unchanged. Because $g^\star$ depends on $(\xi,y)$, the distribution of selected sources need not remain Gaussian. We claim norm and density-level-set preservation per candidate, not preservation of the adaptively selected source law.
+Let $\Delta t_i=t_i-t_{i+1}$. Since $\sum_i\Delta t_i=1$, the pigeonhole principle gives $\max_i\Delta t_i\ge1/K$: every $K$-step schedule contains at least one long temporal transition. Few-step trajectories also expose fewer control locations.
 
-The key is computed independently on probe-fit and source-selection acquisition splits. Feasible D4 records are ordered lexicographically by selection key, fit key, and frozen D4 order. Exact key components and all $25\times8$ records are provided in the archival appendix and public ledger.
-
-### 2.2 Exactly anchored Multi-Back
-
-Suppose $x$ is at lower-noise time $\tau$ and $\tau<\rho$. We first move to the higher-noise time $\rho$, insert control $b$, and return:
+At a current endpoint $x=x_{\mathrm{mono}}(c)$, let $g=\nabla_x\mathcal L_y(x)$ and $J_{\mathrm{mono}}=D_c\mathcal G_{\mathrm{mono}}(\xi;c)$. For a small update $\delta c$, Taylor expansion gives $\mathcal L_y(\mathcal G_{\mathrm{mono}}(c+\delta c))=\mathcal L_y(x)+g^\top J_{\mathrm{mono}}\delta c+O(\|\delta c\|^2)$. Under $\|\delta c\|\le\epsilon$, the maximum first-order decrease is
 
 $$
-C_{\tau,\rho}(x;b)=x+
-\Phi_{\tau\leftarrow\rho}\!\left(\Phi_{\rho\leftarrow\tau}(x)+b\right)
--\Phi_{\tau\leftarrow\rho}\!\left(\Phi_{\rho\leftarrow\tau}(x)\right).
+\epsilon\|J_{\mathrm{mono}}^\top g\|.
 $$
 
-The controlled return is measured relative to its passive numerical round trip.
+**Proposition 1 (local basin-lock criterion).** If $J_{\mathrm{mono}}^\top g=0$, no sufficiently small monotone-control update decreases the task loss to first order. More generally, a small ratio $\|J_{\mathrm{mono}}^\top g\|/\|g\|$ indicates that the task gradient is poorly represented by the endpoint directions available to the current monotone parameterization. We refer to this local restriction as few-step basin lock.
 
-**Anchoring property.** For any frozen numerical maps in the equation above,
+### 3.3 Multi-Back temporal recourse
 
-$$C_{\tau,\rho}(x;0)=x,$$
-
-because the two return terms cancel. No invertibility or semigroup assumption is required. Zero Back control therefore cannot change the incoming state by exploiting a cycle defect. This is an algebraic identity, not a recovery theorem.
-
-### 2.3 Local coupling interpretation
-
-After projecting out fixed active constraints, partition a reduced damped local Gauss–Newton matrix into source $s$ and recourse $v$. If $H_{vv}$ is nonsingular, elimination gives the Schur complement
+For a state $z_\tau$ at a lower-noise time $\tau$, choose an earlier, higher-noise time $\rho$ with $0\le\tau<\rho\le1$. A Back module maps to $\rho$, inserts a control $b$, and returns to $\tau$:
 
 $$
-S=H_{ss}-H_{sv}H_{vv}^{-1}H_{vs}.
+\mathcal B_{\tau,\rho}(z_\tau;b)=\Phi_{\tau\leftarrow\rho}\!\left(\Phi_{\rho\leftarrow\tau}(z_\tau)+C b\right).
 $$
 
-Formally profiling $v$ in this local quadratic model gives the expression above. We use it only to interpret source–recourse coupling; the endpoint solver performs blockwise nonlinear optimization and does not explicitly form or solve the full Schur system. This local interpretation supplies neither convergence nor recovery guarantees. Further details are separated into the [theory note](../docs/theory.md).
+The trajectory then continues toward the data endpoint. For $M$ modules, let $\Gamma=\{(\tau_m,\rho_m)\}_{m=1}^M$ and $b=(b_1,\ldots,b_M)$. Inserting these events yields $x_{\mathrm{MBF}}(c,b;\Gamma)=\mathcal G_{\mathrm{MBF}}(\xi;c,b,\Gamma)$. The operation is not a random restart or re-noising step: it follows the same frozen two-time Flow Map and optimizes the Back controls as part of one trajectory.
 
-## 3. FWI Case Study
+Let $J_c=D_cx_{\mathrm{MBF}}$ and $J_b=D_bx_{\mathrm{MBF}}$. The joint local endpoint space is $\operatorname{range}([J_c,J_b])$, which contains $\operatorname{range}(J_c)$. Under a joint perturbation budget $\|[\delta c;\delta b]\|\le\epsilon$, the maximum first-order decrease is
 
-We use a frozen optimal-transport FlowMap trained as an unconditional $70\times70$ geological prior. A differentiable acoustic forward model maps the endpoint to receiver observations. Classical FWI is a nonconvex wave-equation data-fitting problem [8]; InversionNet is a representative task-trained CNN alternative [9]. Five evaluation rows (29864, 29748, 29544, 29952, 29694) are crossed with raw seeds 20268032–20268432. The algorithm, grid, action budget, and hashes were recorded in a frozen manifest before the remaining panel was run. Truth is opened only after each endpoint record is frozen and is used for post-decision MSE and boundary F1.
+$$
+\epsilon\sqrt{\|J_c^\top g\|^2+\|J_b^\top g\|^2}.
+$$
+
+**Proposition 2 (local unlocking).** If $J_c^\top g=0$ but $J_b^\top g\ne0$, ordinary monotone controls provide no first-order descent direction, whereas the Multi-Back parameterization does. Thus controls inserted at earlier generative scales can reopen task-relevant endpoint directions that are absent from the current monotone trajectory.
+
+### 3.4 Joint optimization
+
+MBF jointly optimizes the optional source displacement, ordinary controls, and Back controls:
+
+$$
+\min_{a,\{u_i\},\{b_m\}}\;\mathcal L_y(x_{\mathrm{MBF}})+\frac{\lambda_{\mathrm{src}}}{2}\|a\|^2+\frac12\sum_i\lambda_i\|u_i\|^2+\frac12\sum_m\gamma_m\|b_m\|^2.
+$$
+
+The constrained form minimizes the same control energy subject to task feasibility. Inference proceeds by sampling $\xi$, initializing all controls at zero, warming up the monotone trajectory, inserting the prescribed Back events, jointly reopening all controls, and returning $\widehat x=x_{\mathrm{MBF}}(a^\star,u^\star,b^\star)$. A trajectory with $K$ monotone transitions and $M$ Back modules uses approximately $K+2M$ Flow Map calls per replay.
+
+**Algorithm 1: Multi-Back Flow.** Sample $\xi\sim p_{\mathrm{src}}$ and initialize $a,u_i,b_m=0$; optimize the monotone controlled trajectory; insert Back modules according to $\Gamma$; jointly optimize $a$, $\{u_i\}$, and $\{b_m\}$ under the MBF objective; return the final endpoint.
+
+## 4. FWI Case Study
+
+We use a frozen optimal-transport FlowMap trained as an unconditional $70\times70$ geological prior. A differentiable acoustic forward model maps the endpoint to receiver observations. Classical FWI is a nonconvex wave-equation data-fitting problem [15]; InversionNet is a representative task-trained CNN alternative [2]. Five evaluation rows (29864, 29748, 29544, 29952, 29694) are crossed with raw seeds 20268032–20268432. The algorithm, grid, action budget, and hashes were recorded in a frozen manifest before the remaining panel was run. Truth is opened only after each endpoint record is frozen and is used for post-decision MSE and boundary F1.
 
 FWI-specific acquisition, checkpoint, split, exposure-history, and metric details are separated into the [archival appendix](../docs/fwi_appendix.md), keeping the main formulation task-agnostic.
 
-### 3.1 Baseline comparison with row-oracle ours
+### 4.1 Baseline comparison with row-oracle ours
 
 ![Frozen baselines compared with the lowest-MSE seed selected separately for each evaluation case.](../assets/figures/method_comparison.png)
 
 *Figure 1. Frozen task-trained baselines versus ours with the lowest-MSE seed selected separately for each evaluation case. The selected seed suffixes are 332, 332, 432, 432, and 232 in row order. This is a post-hoc row-oracle visualization using truth MSE, not an inference-time selection rule or a compute-matched superiority claim.*
 
-### 3.2 Five cases × five seeds
+### 4.2 Five cases × five seeds
 
 ![Truth and final reconstructions for five evaluation cases crossed with five prespecified raw seeds.](../assets/figures/multiseed_models.png)
 
@@ -124,25 +134,30 @@ The final endpoints obtain mean/maximum-observed MSE **0.00929/0.02305** and mea
 
 Relative to the internal source stage, the final endpoint reduces mean MSE by **0.00495**. It improves MSE in 19/25 cells and worsens it in 6/25; boundary F1 improves in 22/25. This supports component attribution inside the implemented pipeline but does not identify a causal source–Multi-Back interaction. A compute-matched source off/on $\times$ Multi-Back off/on experiment is still needed for that claim.
 
-## 4. Limitations and Conclusion
+## 5. Limitations and Conclusion
 
-This technical draft contains only five geological cases, one synthetic acquisition family, and one frozen flow prior. It requires differentiable physics and intermediate trajectory access and is computationally expensive. Its D4 stage performs public-objective candidate selection, and the nonconvex solver has no global recovery guarantee. Matched external baselines, a source off/on $\times$ Multi-Back off/on experiment, uncertainty over more independent cases, and a licensed end-to-end release remain necessary for a formal submission.
+This technical draft currently evaluates one synthetic acquisition family, five geological cases, and one frozen Flow Map prior. The generic formulation requires differentiable or otherwise optimizable task objectives and access to two-time generative mappings. Matched external baselines, the prescribed factorial ablation, more independent cases, and validation on additional inverse operators are needed for a formal general claim.
 
-Within this scope, inference-time source selection and exactly anchored recourse inject measurements without inverse-task retraining. The final endpoint has lower aggregate mean and maximum observed MSE than its recorded internal source stage; this is attribution, not a causal or compute-matched comparison. Broader applicability remains a hypothesis to test on new operators and priors.
+Within the current scope, MBF reframes frozen generative inference as non-monotone control on a two-time flow graph. Flow Maps reduce the number of generative transitions, while Multi-Back introduces task-relevant directions from earlier generative scales. The reported FWI panel supports repeatability and internal component attribution; broader applicability remains to be established.
 
 ## References
 
 1. O. Ronneberger, P. Fischer, and T. Brox. “U-Net: Convolutional Networks for Biomedical Image Segmentation.” *MICCAI*, 2015.
-2. P. Isola, J.-Y. Zhu, T. Zhou, and A. A. Efros. “Image-to-Image Translation with Conditional Adversarial Networks.” *CVPR*, 2017.
-3. Y. Song et al. “Score-Based Generative Modeling through Stochastic Differential Equations.” *ICLR*, 2021.
-4. Y. Lipman et al. “Flow Matching for Generative Modeling.” *ICLR*, 2023.
-5. H. Chung et al. “Diffusion Posterior Sampling for General Noisy Inverse Problems.” *ICLR*, 2023.
-6. Y. Blau and T. Michaeli. “The Perception-Distortion Tradeoff.” *CVPR*, 2018.
-7. M. Asim, M. Daniels, O. Leong, A. Ahmed, and P. Hand. “Invertible Generative Models for Inverse Problems: Mitigating Representation Error and Dataset Bias.” *ICML*, 2020.
-8. J. Virieux and S. Operto. “An Overview of Full-Waveform Inversion in Exploration Geophysics.” *Geophysics*, 74(6), 2009.
-9. Y. Wu and Y. Lin. “InversionNet: An Efficient and Accurate Data-Driven Full Waveform Inversion.” *IEEE Transactions on Computational Imaging*, 6, 2020.
-10. A. Tong et al. “Improving and Generalizing Flow-Based Generative Models with Minibatch Optimal Transport.” *Transactions on Machine Learning Research*, 2024.
+2. Y. Wu and Y. Lin. “InversionNet: An Efficient and Accurate Data-Driven Full Waveform Inversion.” *IEEE TCI*, 2020.
+3. Y. Blau and T. Michaeli. “The Perception-Distortion Tradeoff.” *CVPR*, 2018.
+4. Z. Li et al. “Fourier Neural Operator for Parametric Partial Differential Equations.” *ICLR*, 2021.
+5. P. Isola et al. “Image-to-Image Translation with Conditional Adversarial Networks.” *CVPR*, 2017.
+6. Z. Zhang, Y. Wu, Z. Zhou, and Y. Lin. “VelocityGAN: Subsurface Velocity Image Estimation Using Conditional Adversarial Networks.” *WACV*, 2019.
+7. H. Chung et al. “Improving Diffusion Models for Inverse Problems using Manifold Constraints.” *NeurIPS*, 2022.
+8. H. Chung et al. “Diffusion Posterior Sampling for General Noisy Inverse Problems.” *ICLR*, 2023.
+9. J. Song et al. “Pseudoinverse-Guided Diffusion Models for Inverse Problems.” *ICLR*, 2023.
+10. Y. Zhu et al. “Denoising Diffusion Models for Plug-and-Play Image Restoration.” *CVPR Workshops*, 2023.
+11. J. Song et al. “ReSample: Plug-and-Play Posterior Sampling via Hard Data Consistency.” *ICLR*, 2024.
+12. B. Zhang et al. “Improving Diffusion Inverse Problem Solving with Decoupled Noise Annealing.” *CVPR*, 2025.
+13. “Optimization-Guided Diffusion for Robot Control.” arXiv:2606.24208, 2026.
+14. N. M. Boffi, M. S. Albergo, and E. Vanden-Eijnden. “Flow Map Matching.” 2024.
+15. J. Virieux and S. Operto. “An Overview of Full-Waveform Inversion in Exploration Geophysics.” *Geophysics*, 2009.
 
 ---
 
-Code, the auditable D4 decision ledger, exact metric definitions, and reproducibility notes are available in the [project README](../README.md).
+Code, audit records, metric definitions, and reproducibility notes are available in the [project README](../README.md).
