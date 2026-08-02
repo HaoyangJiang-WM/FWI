@@ -1,4 +1,4 @@
-# Multi-Back Flow
+# Multi-Back Flow for Full-Waveform Inversion (FWI)
 
 **Optimization-Guided Flow Maps for Inverse Problems**
 
