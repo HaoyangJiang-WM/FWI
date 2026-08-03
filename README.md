@@ -196,6 +196,11 @@ Machine-readable results are available in [`results/final_25_summary.json`](resu
 
 ## Quick start
 
+The commands below install and test the released core utilities and validate
+the frozen result records. They do not rerun the complete FWI experiments.
+Full reproduction additionally requires the research artifacts listed in
+[Scope](#scope).
+
 ```bash
 python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
