@@ -136,7 +136,7 @@ Relative to the internal source stage, the final endpoint reduces mean MSE by **
 
 ### 4.3 Seed-sensitive source failures and Multi-Back rescue
 
-Source optimization can be sensitive to the realized seed and may occasionally converge to a poor reconstruction basin. Figure 3 shows three diagnostic runs in which the source reconstruction is inaccurate, while later Multi-Back recourse produces a substantially lower-error velocity model.
+Figure 3 presents three catastrophic source cases and the corresponding MB recovery results. In each case, source optimization enters a poor reconstruction basin, whereas subsequent Multi-Back recourse recovers the main layered structures and substantially reduces the reconstruction error.
 
 ![Three seed-sensitive source failures that Multi-Back rescues.](../assets/figures/mb_rescue_3cases_compact.png)
 
