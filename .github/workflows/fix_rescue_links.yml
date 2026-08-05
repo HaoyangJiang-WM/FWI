@@ -1,0 +1,29 @@
+name: Update source-rescue links
+
+on:
+  push:
+    branches:
+      - agent/restore-clean-rescue-webp
+    paths:
+      - .github/workflows/fix_rescue_links.yml
+
+permissions:
+  contents: write
+
+jobs:
+  update-links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/restore-clean-rescue-webp
+      - name: Update links and remove temporary workflow
+        run: |
+          sed -i 's#assets/figures/source_rescue\.png#assets/figures/source_rescue.webp#g' README.md
+          sed -i 's#\.\./assets/figures/source_rescue\.png#../assets/figures/source_rescue.webp#g' paper/main.md
+          rm .github/workflows/fix_rescue_links.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Use restored clean source-rescue figure'
+          git push origin HEAD:agent/restore-clean-rescue-webp
