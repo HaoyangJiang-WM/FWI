@@ -117,7 +117,7 @@ For a spatially varying acoustic velocity $v(\mathbf r)$, the pressure field $p(
 
 ```math
 \frac{1}{v(\mathbf r)^2}
-\frac{\partial^2 p(\mathbf r,t)}{\partial t^2}
+\frac{\partial^2 p(\mathbf r,t)}{\partial t^2
 -
 \nabla^2 p(\mathbf r,t)
 =
@@ -203,7 +203,7 @@ Machine-readable results are available in [`results/final_25_summary.json`](resu
 ## Quick start
 
 ```bash
-python -m venv
+python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -e ".[test]"
 pytest -q
