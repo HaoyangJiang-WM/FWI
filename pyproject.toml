@@ -23,6 +23,8 @@ classifiers = [
 [project.urls]
 Repository = "https://github.com/HaoyangJiang-WM/FWI"
 Issues = "https://github.com/HaoyangJiang-WM/FWI/issues"
+Documentation = "https://github.com/HaoyangJiang-WM/FWI/tree/main/docs"
+Paper = "https://github.com/HaoyangJiang-WM/FWI/blob/main/paper/main.md"
 
 [project.optional-dependencies]
 test = ["pytest>=7"]

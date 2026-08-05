@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use this software or its released results, please cite it using the metadata below."
-title: "Go Back to Move Forward: Measurement-Guided Recourse for a Frozen Generative Flow"
+title: "Multi-Back Flow: Optimization-Guided Flow Maps for Inverse Problems"
 type: software
 version: 0.1.0
 date-released: 2026-07-31
