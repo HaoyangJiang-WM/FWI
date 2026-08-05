@@ -192,6 +192,14 @@ This is a reconstruction-quality visualization, not an inference-time seed-selec
 
 This panel shows all 25 prespecified runs and provides the main view of reconstruction variability across seeds.
 
+### Multi-Back rescue of poor source basins
+
+Source optimization can be sensitive to the realized random seed and may converge to a poor reconstruction basin. The three examples below were selected to visualize that failure mode: the source inversion is inaccurate, while later Multi-Back recourse produces a substantially better model.
+
+![Three seed-sensitive source failures that Multi-Back rescues](assets/figures/mb_rescue_3cases_compact.png)
+
+For each row, the displayed `source + MB` panel is the lowest-truth-MSE result among the one-Back, two-Back, and full shipped-chain states from that recorded run. This is a post-hoc diagnostic visualization rather than an inference-time stage-selection rule.
+
 Machine-readable results are available in [`results/final_25_summary.json`](results/final_25_summary.json). FWI acquisition settings, evaluation definitions, and audit details are documented in [`docs/fwi_appendix.md`](docs/fwi_appendix.md).
 
 ## Quick start
