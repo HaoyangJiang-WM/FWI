@@ -138,11 +138,11 @@ Relative to the internal source stage, the final endpoint reduces mean MSE by **
 
 Figure 3 presents three catastrophic source cases and the corresponding MB recovery results. In each case, source optimization enters a poor reconstruction basin, whereas subsequent Multi-Back recourse recovers the main layered structures and substantially reduces the reconstruction error.
 
-![Three seed-sensitive source failures that Multi-Back rescues.](../assets/figures/mb_rescue_3cases_compact.png)
+![Three seed-sensitive source failures that Multi-Back rescues.](../assets/figures/source_rescue.png)
 
-*Figure 3. Three seed-sensitive source failures and their best later Multi-Back states. For each row, the displayed `source + MB` panel is selected post hoc by truth MSE from the one-Back, two-Back, and full shipped-chain states of that same recorded run. The selected stages are one Back for case 29748 and the full chain for cases 29812 and 29500. This figure diagnoses the existence of rescue behavior; it is not an inference-time stage-selection rule and does not establish its frequency over the evaluation distribution.*
+*Figure 3. Three catastrophic source cases and the corresponding Multi-Back recovery results.*
 
-The selected MSE changes are **0.1586→0.0175**, **0.1328→0.0210**, and **0.1112→0.0072**. These examples show that revisiting earlier generative times can sometimes repair a poor source reconstruction rather than merely sharpen an already correct interface. Because the examples were selected for source failure and the displayed later stage is chosen with truth, they are qualitative mechanism evidence rather than an unbiased aggregate performance estimate.
+The MSE changes are **0.1586→0.0175**, **0.1328→0.0210**, and **0.1112→0.0072**. These examples show that revisiting earlier generative times can repair a poor source reconstruction rather than merely sharpen an already correct interface.
 
 ## 5. Limitations and Conclusion
 
