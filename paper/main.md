@@ -138,7 +138,7 @@ Relative to the internal source stage, the final endpoint reduces mean MSE by **
 
 Figure 3 presents three catastrophic source cases and the corresponding MB recovery results. In each case, source optimization enters a poor reconstruction basin, whereas subsequent Multi-Back recourse recovers the main layered structures and substantially reduces the reconstruction error.
 
-![Three seed-sensitive source failures that Multi-Back rescues.](../assets/figures/source_rescue.png)
+![Three seed-sensitive source failures that Multi-Back rescues.](../assets/figures/source_rescue.webp)
 
 *Figure 3. Three catastrophic source cases and the corresponding Multi-Back recovery results.*
 
