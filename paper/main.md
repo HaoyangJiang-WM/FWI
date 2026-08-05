@@ -134,6 +134,16 @@ The final endpoints obtain mean/maximum-observed MSE **0.00929/0.02305** and mea
 
 Relative to the internal source stage, the final endpoint reduces mean MSE by **0.00495**. It improves MSE in 19/25 cells and worsens it in 6/25; boundary F1 improves in 22/25. This supports component attribution inside the implemented pipeline but does not identify a causal source–Multi-Back interaction. A compute-matched source off/on $\times$ Multi-Back off/on experiment is still needed for that claim.
 
+### 4.3 Seed-sensitive source failures and Multi-Back rescue
+
+Source optimization can be sensitive to the realized seed and may occasionally converge to a poor reconstruction basin. Figure 3 shows three diagnostic runs in which the source reconstruction is inaccurate, while later Multi-Back recourse produces a substantially lower-error velocity model.
+
+![Three seed-sensitive source failures that Multi-Back rescues.](../assets/figures/mb_rescue_3cases_compact.png)
+
+*Figure 3. Three seed-sensitive source failures and their best later Multi-Back states. For each row, the displayed `source + MB` panel is selected post hoc by truth MSE from the one-Back, two-Back, and full shipped-chain states of that same recorded run. The selected stages are one Back for case 29748 and the full chain for cases 29812 and 29500. This figure diagnoses the existence of rescue behavior; it is not an inference-time stage-selection rule and does not establish its frequency over the evaluation distribution.*
+
+The selected MSE changes are **0.1586→0.0175**, **0.1328→0.0210**, and **0.1112→0.0072**. These examples show that revisiting earlier generative times can sometimes repair a poor source reconstruction rather than merely sharpen an already correct interface. Because the examples were selected for source failure and the displayed later stage is chosen with truth, they are qualitative mechanism evidence rather than an unbiased aggregate performance estimate.
+
 ## 5. Limitations and Conclusion
 
 This technical draft currently evaluates one synthetic acquisition family, five geological cases, and one frozen Flow Map prior. The generic formulation requires differentiable or otherwise optimizable task objectives and access to two-time generative mappings. Matched external baselines, the prescribed factorial ablation, more independent cases, and validation on additional inverse operators are needed for a formal general claim.
