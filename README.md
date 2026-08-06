@@ -9,13 +9,13 @@
 
 > **Paper:** See the [full paper in Markdown](paper/main.md) or the [LaTeX source](paper/main.tex) for the complete formulation, analysis, and experiments.
 
-Multi-Back Flow (MBF) is a general inference-time framework for inverse problems. This repository focuses on its application to **full-waveform inversion (FWI)**, where a frozen unconditional Flow Map prior is used to recover subsurface velocity models from seismic waveforms. A brief introduction to FWI is provided [below](#what-is-fwi).
+We propose Multi-Back Flow (MBF), a general inference-time framework for inverse problems. This repository focuses on its application to **full-waveform inversion (FWI)**, where a frozen unconditional Flow Map prior is used to recover subsurface velocity models from seismic waveforms. A brief introduction to FWI is provided [below](#what-is-fwi).
 
 ![FWI velocity model and observed waveforms](assets/figures/fwi_xy_example.png)
 
 FWI recovers a subsurface velocity model $x$ from multishot seismic observations $y=H(x)+\eta$. The example above shows one target velocity model and its five source gathers; the acquisition geometry and forward operator are introduced in [What is FWI?](#what-is-fwi).
 
-MBF keeps the generative prior frozen and introduces the forward operator and observations only through the inference objective. Its main idea is to replace a fixed monotone few-step trajectory with a controlled, non-monotone path: when a long Flow Map transition enters a poor reconstruction basin, MBF returns to an earlier generative time, applies a task-driven control, and moves forward again.
+Our proposed MBF framework keeps the generative prior frozen and introduces the forward operator and observations only through the inference objective. Its main idea is to replace a fixed monotone few-step trajectory with a controlled, non-monotone path: when a long Flow Map transition enters a poor reconstruction basin, MBF returns to an earlier generative time, applies a task-driven control, and moves forward again.
 
 ## Motivation
 
@@ -115,7 +115,7 @@ but the current FWI implementation solves it in the staged source-then-Multi-Bac
 | DPS | Adds likelihood guidance during reverse diffusion | Monotone diffusion chain | No |
 | DAPS | Alternates posterior refinement and noise annealing | Denoise/re-noise stages | No |
 | OGD | Optimizes controls along a frozen DDIM path | Monotone controlled chain | No |
-| MBF | Reopens earlier generative times during optimization | **Non-monotone Flow Map path** | No |
+| **MBF (ours)** | Reopens earlier generative times during optimization | **Non-monotone Flow Map path** | No |
 
 ## What is FWI?
 
