@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - .github/workflows/restore_exact_source_rescue_png.yml
+      - .github/restore_exact_source_rescue.trigger
 
 permissions:
   contents: write
@@ -43,6 +44,7 @@ jobs:
           sed -i 's#\.\./assets/figures/source_rescue\.webp#../assets/figures/source_rescue.png#g' paper/main.md
           rm -f assets/figures/source_rescue.webp
           rm -f .github/workflows/restore_exact_source_rescue_png.yml
+          rm -f .github/restore_exact_source_rescue.trigger
 
       - name: Commit verified PNG
         run: |
