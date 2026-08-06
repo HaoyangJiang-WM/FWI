@@ -75,7 +75,7 @@ $$
 \epsilon\|J_{\mathrm{mono}}^\top g\|.
 $$
 
-**Proposition 1 (local basin-lock criterion).** If $J_{\mathrm{mono}}^\top g=0$, no sufficiently small monotone-control update decreases the task loss to first order. More generally, a small ratio $\|J_{\mathrm{mono}}^\top g\|/\|g\|$ indicates that the task gradient is poorly represented by the endpoint directions available to the monotone parameterization. We refer to this local restriction as few-step basin lock.
+**Proposition 1 (local basin-lock criterion).** If $J_{\mathrm{mono}}^\top g=0$, no sufficiently small monotone-control update decreases the task loss to first order. More generally, a small ratio $\|J_{\mathrm{mono}}^\top g\|/\|g\|$ indicates that the task gradient is poorly represented by the endpoint directions available to the current monotone parameterization. We refer to this local restriction as few-step basin lock.
 
 ### 3.3 Multi-Back temporal recourse
 
@@ -103,9 +103,9 @@ $$
 \min_{a,\{u_i\},\{b_m\}}\;\mathcal L_y(x_{\mathrm{MBF}})+\frac{\lambda_{\mathrm{src}}}{2}\|a\|^2+\frac12\sum_i\lambda_i\|u_i\|^2+\frac12\sum_m\gamma_m\|b_m\|^2.
 $$
 
-They need not, however, be updated simultaneously. The reported FWI solver first optimizes the generative source through a coarse-to-fine measurement objective. This stage chooses a measurement-informed global trajectory and supplies the state at the anchor time. The solver then holds that source fixed and optimizes Multi-Back controls, which revisit earlier generative times to provide recourse and refinement around the established trajectory. The staged schedule separates a global basin-setting coordinate from later recourse coordinates and serves as an optimization warm start; it is not an assumption that source and Back controls are mathematically independent.
+They need not, however, be updated simultaneously. The reported FWI solver first optimizes the generative source through a coarse-to-fine measurement objective. This stage chooses a measurement-informed global trajectory and supplies the intermediate state $z_\tau$ at the prespecified time $\tau$, where the first Multi-Back correction is introduced. The solver then holds that source fixed and optimizes Multi-Back controls, which revisit earlier generative times to provide recourse and refinement around the established trajectory. The staged schedule separates a global basin-setting coordinate from later recourse coordinates and serves as an optimization warm start; it is not an assumption that source and Back controls are mathematically independent.
 
-**Algorithm 1: staged Multi-Back Flow.** Sample $\xi\sim p_{\mathrm{src}}$ and initialize the source control $a=0$; optimize $a$ through the source-to-data trajectory; construct the anchor state from the optimized source; insert Back modules according to $\Gamma$; optimize the monotone and Back controls with the source fixed; return the final endpoint.
+**Algorithm 1: staged Multi-Back Flow.** Sample $\xi\sim p_{\mathrm{src}}$ and initialize the source control $a=0$; optimize $a$ through the source-to-data trajectory; construct $z_\tau$ from the optimized source at the prespecified time $\tau$; insert Back modules according to $\Gamma$; optimize the monotone and Back controls with the source fixed; return the final endpoint.
 
 ## 4. FWI Case Study
 
@@ -141,9 +141,9 @@ The MSE changes are **0.1586→0.0175**, **0.1328→0.0210**, and **0.1112→0.0
 
 ## 5. Limitations and Conclusion
 
-This technical draft currently evaluates one synthetic acquisition family, five geological cases, and one frozen Flow Map prior. The generic formulation requires differentiable or otherwise optimizable task objectives and access to two-time generative mappings. Matched external baselines, the prescribed factorial ablation, more independent cases, and validation on additional inverse operators are needed for a formal general claim.
+This study evaluates one synthetic acquisition family, five geological cases, and one frozen Flow Map prior. Across the frozen $5\times5$ panel, MBF obtains mean/maximum-observed MSE **0.00929/0.02305** and mean/minimum boundary F1 **0.8905/0.7526**. Relative to the internal source stage, the final endpoint reduces mean MSE from **0.01424** to **0.00929**, improving MSE in 19/25 cells and boundary F1 in 22/25 cells. These source-to-final comparisons are descriptive within the implemented pipeline and do not establish a causal source–Multi-Back interaction.
 
-Within the current scope, MBF reframes frozen generative inference as non-monotone control on a two-time flow graph. Flow Maps reduce the number of generative transitions, while Multi-Back introduces task-relevant directions from earlier generative scales. The reported FWI panel supports repeatability and internal component attribution; broader applicability remains to be established.
+Within this scope, MBF reframes frozen generative inference as non-monotone control on a two-time flow graph. Flow Maps reduce the number of generative transitions, while Multi-Back introduces task-relevant directions from earlier generative scales. Matched external baselines, the prescribed factorial ablation, more independent cases, and validation on additional inverse operators are still required for broader causal or superiority claims.
 
 ## References
 
@@ -159,7 +159,7 @@ Within the current scope, MBF reframes frozen generative inference as non-monoto
 10. Y. Zhu et al. “Denoising Diffusion Models for Plug-and-Play Image Restoration.” *CVPR Workshops*, 2023.
 11. J. Song et al. “ReSample: Plug-and-Play Posterior Sampling via Hard Data Consistency.” *ICLR*, 2024.
 12. B. Zhang et al. “Improving Diffusion Inverse Problem Solving with Decoupled Noise Annealing.” *CVPR*, 2025.
-13. “Optimization-Guided Diffusion for Robot Control.” arXiv:2606.24208, 2026.
+13. S. Bodmer, R. Zurbrügg, T. Portela, H. Ma, A. Didier, M. Hutter, C. Jones, and M. Zeilinger. “Grounding Generative Policies in Physics: Optimization-Guided Diffusion for Robot Control.” arXiv:2606.24208, 2026.
 14. N. M. Boffi, M. S. Albergo, and E. Vanden-Eijnden. “Flow Map Matching.” 2024.
 15. J. Virieux and S. Operto. “An Overview of Full-Waveform Inversion in Exploration Geophysics.” *Geophysics*, 2009.
 
