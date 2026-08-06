@@ -59,15 +59,9 @@ Unlike a velocity model that must be integrated over each interval, a learned Fl
 
 ### Generative source and staged optimization
 
-Here **source** means the generative source at $t=1$: the initial Gaussian latent state $\xi$, optionally shifted by a source control $a$,
+Here **source** means the raw Gaussian noise used to initialize the frozen Flow Map at $t=1$. It is not the physical seismic source $s(\mathbf r,t)$ in the wave equation.
 
-```math
-z_1=\xi+B_{\mathrm{src}}a.
-```
-
-It is not the physical seismic source $s(\mathbf r,t)$ in the wave equation. Changing $z_1$ changes the entire generated trajectory and can therefore select a different coarse reconstruction basin.
-
-The reported FWI solver uses a staged schedule. It first optimizes the generative source through a coarse-to-fine measurement objective to obtain a measurement-informed trajectory. It then maps that trajectory to an anchor time and optimizes Multi-Back controls while keeping the selected source fixed. The source stage acts on the global basin-setting coordinate; the Multi-Back stage provides recourse and refinement from earlier generative times after that trajectory has been established. This separation is an optimization schedule and warm start, not a claim that the variables are mathematically independent.
+We first optimize the raw noise to obtain a measurement-guided initial generative trajectory. We then keep the optimized raw noise fixed and use Multi-Back controls to correct and refine that trajectory. This staged design separates global basin selection from later trajectory correction, providing a more stable warm start than optimizing all variables from scratch. It is an optimization schedule, not a claim that the variables are mathematically independent.
 
 A controlled monotone transition is
 
