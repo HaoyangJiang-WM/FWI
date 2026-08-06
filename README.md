@@ -57,6 +57,18 @@ Unlike a velocity model that must be integrated over each interval, a learned Fl
 
 *Few-step control can remain trapped in a locally reachable basin. Multi-Back revisits an earlier, higher-noise time, applies a connected control, and follows a newly reachable branch toward the reward.*
 
+### Generative source and staged optimization
+
+Here **source** means the generative source at $t=1$: the initial Gaussian latent state $\xi$, optionally shifted by a source control $a$,
+
+```math
+z_1=\xi+B_{\mathrm{src}}a.
+```
+
+It is not the physical seismic source $s(\mathbf r,t)$ in the wave equation. Changing $z_1$ changes the entire generated trajectory and can therefore select a different coarse reconstruction basin.
+
+The reported FWI solver uses a staged schedule. It first optimizes the generative source through a coarse-to-fine measurement objective to obtain a measurement-informed trajectory. It then maps that trajectory to an anchor time and optimizes Multi-Back controls while keeping the selected source fixed. The source stage acts on the global basin-setting coordinate; the Multi-Back stage provides recourse and refinement from earlier generative times after that trajectory has been established. This separation is an optimization schedule and warm start, not a claim that the variables are mathematically independent.
+
 A controlled monotone transition is
 
 ```math
@@ -82,21 +94,23 @@ MBF inserts a backward-forward control module:
 
 The module returns the current state to an earlier generative time, inserts a Back control, and transports the modified state forward again. It is part of the same deterministic controlled trajectory, rather than a random restart or fresh-noise annealing step.
 
-Source, monotone, and Back controls are optimized jointly:
+The source and Back variables belong to one trajectory objective,
 
 ```math
-\min_{c,b}\;
+\min_{a,u,b}\;
 \mathcal L_y
 \left(
-x_{\mathrm{MBF}}(c,b)
+x_{\mathrm{MBF}}(a,u,b)
 \right)
 +
-\frac{1}{2}\left\lVert c\right\rVert_{\Lambda_c}^{2}
+\frac{\lambda_{\mathrm{src}}}{2}\lVert a\rVert^2
 +
-\frac{1}{2}\left\lVert b\right\rVert_{\Lambda_b}^{2}.
+\frac{1}{2}\sum_i\lambda_i\lVert u_i\rVert^2
++
+\frac{1}{2}\sum_m\gamma_m\lVert b_m\rVert^2,
 ```
 
-Back controls add endpoint directions that may be unavailable to the current monotone path. The implementation also uses zero-control anchoring so that a zero Back control leaves the incoming state unchanged. See the [paper](paper/main.md) and [theory notes](docs/theory.md) for details.
+but the current FWI implementation solves it in the staged source-then-Multi-Back order described above. Back controls add endpoint directions that may be unavailable to the current monotone path. The implementation also uses zero-control anchoring so that a zero Back control leaves the incoming state unchanged. See the [paper](paper/main.md) and [theory notes](docs/theory.md) for details.
 
 ## Relation to existing methods
 
