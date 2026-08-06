@@ -15,7 +15,7 @@
 \begin{abstract}
 Pretrained generative models provide reusable priors for inverse problems, but conditioning them on a new measurement operator remains challenging. Supervised inverse networks offer fast inference yet couple the reconstruction rule to operators and acquisition settings represented during training; under multimodal ambiguity, pointwise regression can further favor conditional averages. Diffusion posterior methods avoid task-specific retraining by introducing measurement information at inference time, but often require long denoising chains or repeated posterior refinement. Optimization-Guided Diffusion (OGD) instead optimizes controls along a frozen DDIM trajectory.
 
-We introduce \method{} (MBF), which extends optimization-guided generation from a fixed denoising chain to a non-monotone trajectory built from a frozen two-time Flow Map. Flow maps enable few-step generation through long temporal transitions, but a few-step monotone path exposes only a small number of control locations and can become locally locked when the task gradient is poorly represented by its endpoint control Jacobian. MBF inserts controlled backward--forward transitions to earlier generative times, where additional controls open endpoint directions unavailable to the monotone parameterization. The general trajectory objective contains generative-source, monotone, and Back controls, while the reported FWI solver uses a staged source-then-Multi-Back schedule. We provide a local descent characterization of basin lock and show how Multi-Back controls restore first-order descent directions. A synthetic full-waveform inversion study demonstrates the current implementation; broader validation remains future work.
+We introduce \method{} (MBF), which extends optimization-guided generation from a fixed denoising chain to a non-monotone trajectory built from a frozen two-time Flow Map. Flow maps enable few-step generation through long temporal transitions, but a few-step monotone path exposes only a small number of control locations and can become locally locked when the task gradient is poorly represented by its endpoint control Jacobian. MBF inserts controlled backward--forward transitions to earlier generative times, where additional controls open endpoint directions unavailable to the monotone parameterization. The general trajectory objective contains generative-source, monotone, and Back controls, while the reported FWI solver uses a staged source-then-Multi-Back schedule. We provide a local descent characterization of basin lock and show how Multi-Back controls restore first-order descent directions. A synthetic full-waveform inversion study demonstrates the current implementation; broader validation across operators and domains remains future work.
 \end{abstract}
 
 \section{Introduction}
@@ -86,14 +86,14 @@ The variables belong to one trajectory objective,
 \begin{equation}
 \min_{a,\{u_i\},\{b_m\}}\;\mathcal L_y(x_{\mathrm{MBF}})+\frac{\lambda_{\mathrm{src}}}{2}\|a\|^2+\frac12\sum_i\lambda_i\|u_i\|^2+\frac12\sum_m\gamma_m\|b_m\|^2.
 \end{equation}
-They need not be updated simultaneously. The reported FWI solver first optimizes the generative source through a coarse-to-fine measurement objective. This stage chooses a measurement-informed global trajectory and supplies the state at the anchor time. The solver then holds that source fixed and optimizes Multi-Back controls, which revisit earlier generative times to provide recourse and refinement around the established trajectory. The staged schedule separates a global basin-setting coordinate from later recourse coordinates and serves as an optimization warm start; it is not an assumption that source and Back controls are mathematically independent.
+They need not be updated simultaneously. The reported FWI solver first optimizes the generative source through a coarse-to-fine measurement objective. This stage chooses a measurement-informed global trajectory and supplies the intermediate state $z_\tau$ at the prespecified time $\tau$, where the first Multi-Back correction is introduced. The solver then holds that source fixed and optimizes Multi-Back controls, which revisit earlier generative times to provide recourse and refinement around the established trajectory. The staged schedule separates a global basin-setting coordinate from later recourse coordinates and serves as an optimization warm start; it is not an assumption that source and Back controls are mathematically independent.
 
 \begin{algorithm}[t]
 \caption{Staged Multi-Back Flow}
 \begin{algorithmic}[1]
 \STATE Sample $\xi\sim p_{\mathrm{src}}$ and initialize $a\leftarrow0$.
 \STATE Optimize $a$ through the source-to-data trajectory.
-\STATE Construct the anchor state from the optimized source.
+\STATE Construct $z_\tau$ from the optimized source at the prespecified time $\tau$.
 \STATE Insert Back modules according to $\Gamma$.
 \STATE Optimize monotone and Back controls with the source fixed.
 \RETURN The final endpoint.
@@ -101,35 +101,44 @@ They need not be updated simultaneously. The reported FWI solver first optimizes
 \end{algorithm}
 
 \section{FWI Case Study}
-We use a frozen optimal-transport FlowMap trained as an unconditional $70\times70$ geological prior. A differentiable acoustic forward model maps the endpoint to receiver observations. Classical FWI is a nonconvex wave-equation data-fitting problem \cite{virieux2009fwi}; InversionNet is a representative task-trained CNN alternative \cite{wu2019inversionnet}. Five evaluation rows (29864, 29748, 29544, 29952, 29694) are crossed with raw seeds 20268032--20268432. Truth is opened only after each endpoint record is frozen.
+We use a frozen optimal-transport FlowMap trained as an unconditional $70\times70$ geological prior. A differentiable acoustic forward model maps the endpoint to receiver observations. Classical FWI is a nonconvex wave-equation data-fitting problem \cite{virieux2009fwi}; InversionNet is a representative task-trained CNN alternative \cite{wu2019inversionnet}. Five evaluation rows (29864, 29748, 29544, 29952, 29694) are crossed with raw seeds 20268032--20268432. The algorithm, grid, action budget, and hashes were recorded in a frozen manifest before the remaining panel was run. Truth is opened only after each endpoint record is frozen and is used for post-decision MSE and boundary F1.
 
+FWI-specific acquisition, checkpoint, split, exposure-history, and metric details are separated into the \href{../docs/fwi_appendix.md}{archival appendix}, keeping the main formulation task-agnostic.
+
+\subsection{Baseline comparison with row-oracle ours}
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{../assets/figures/method_comparison.png}
-\caption{Frozen task-trained baselines versus ours with the lowest-MSE seed selected separately for each case. This post-hoc row-oracle view is not an inference-time selection rule.}
+\caption{Frozen task-trained baselines versus ours with the lowest-MSE seed selected separately for each evaluation case. The selected seed suffixes are 332, 332, 432, 432, and 232 in row order. This is a post-hoc row-oracle visualization using truth MSE, not an inference-time selection rule or a compute-matched superiority claim.}
 \label{fig:comparison}
 \end{figure}
 
+\subsection{Five cases $\times$ five seeds}
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{../assets/figures/multiseed_models.png}
-\caption{Truth and final reconstructions for five evaluation cases crossed with five prespecified raw seeds.}
+\caption{Truth and final reconstructions for five evaluation cases crossed with five prespecified raw seeds. Unlike Figure~\ref{fig:comparison}'s explicit row-oracle summary, this panel shows every run.}
 \label{fig:models}
 \end{figure}
 
-The final endpoints obtain mean/maximum-observed MSE $0.00929/0.02305$ and mean/minimum boundary F1 $0.8905/0.7526$. Mean runtime is 2,978 seconds per cell. Relative to the internal source stage, the final endpoint reduces mean MSE from $0.01424$ to $0.00929$ and the maximum observed MSE from $0.03219$ to $0.02305$. It improves MSE in 19/25 cells and boundary F1 in 22/25. These are descriptive within-pipeline comparisons; the source stage is not a compute-matched independent baseline.
+The final endpoints obtain mean/maximum-observed MSE $0.00929/0.02305$ and mean/minimum boundary F1 $0.8905/0.7526$. Mean runtime is 2,978 seconds per cell. The unit of task variation is the geological case ($n=5$); seeds are repeated runs within case. We therefore report the complete crossed panel and paired cell-wise attribution descriptively, without treating the 25 cells as independent samples or claiming population-level significance.
 
+Relative to the internal source stage, the final endpoint reduces mean MSE from $0.01424$ to $0.00929$ and the maximum observed MSE from $0.03219$ to $0.02305$. It improves MSE in 19/25 cells and boundary F1 in 22/25. These are descriptive within-pipeline comparisons: the source stage is not a compute-matched independent baseline, and a source off/on $\times$ Multi-Back off/on experiment is still needed to identify a causal interaction.
+
+\subsection{Seed-sensitive source failures and Multi-Back rescue}
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{../assets/figures/source_rescue.png}
-\caption{Three seed-sensitive source failures and the corresponding Multi-Back recovery results.}
+\caption{Three catastrophic source cases and the corresponding Multi-Back recovery results.}
 \label{fig:rescue}
 \end{figure}
 
 The rescue examples change MSE from $0.1586$ to $0.0175$, $0.1328$ to $0.0210$, and $0.1112$ to $0.0072$. They show that revisiting earlier generative times can repair a poor source reconstruction rather than merely sharpen an already correct interface.
 
 \section{Limitations and Conclusion}
-This technical draft currently evaluates one synthetic acquisition family, five geological cases, and one frozen Flow Map prior. Matched external baselines, the prescribed factorial ablation, more independent cases, and validation on additional inverse operators are needed for a formal general claim. Within the current scope, MBF reframes frozen generative inference as non-monotone control on a two-time flow graph.
+This study evaluates one synthetic acquisition family, five geological cases, and one frozen Flow Map prior. Across the frozen $5\times5$ panel, MBF obtains mean/maximum-observed MSE $0.00929/0.02305$ and mean/minimum boundary F1 $0.8905/0.7526$. Relative to the internal source stage, the final endpoint reduces mean MSE from $0.01424$ to $0.00929$, improving MSE in 19/25 cells and boundary F1 in 22/25 cells. These source-to-final comparisons are descriptive within the implemented pipeline and do not establish a causal source--Multi-Back interaction.
+
+Within this scope, MBF reframes frozen generative inference as non-monotone control on a two-time flow graph. Flow Maps reduce the number of generative transitions, while Multi-Back introduces task-relevant directions from earlier generative scales. Matched external baselines, the prescribed factorial ablation, more independent cases, and validation on additional inverse operators are still required for broader causal or superiority claims.
 
 \bibliographystyle{plain}
 \bibliography{references}
